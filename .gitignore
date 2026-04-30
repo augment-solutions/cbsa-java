@@ -33,3 +33,10 @@ target/
 .vscode/
 .DS_Store
 HELP.md
+
+# CockroachDB runtime artifacts when started from this directory
+cockroach-data/
+heap_profiler/
+goroutine_dump/
+pprof_dump/
+logs/

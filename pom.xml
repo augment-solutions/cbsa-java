@@ -28,10 +28,29 @@
         <flyway.version>11.10.0</flyway.version>
         <postgresql.version>42.7.7</postgresql.version>
         <testcontainers.version>1.20.6</testcontainers.version>
-        <cockroach.url>jdbc:postgresql://localhost:26257/cbsa?sslmode=disable</cockroach.url>
-        <cockroach.user>root</cockroach.user>
-        <cockroach.password/>
+        <!-- Build-time DB coordinates for the Flyway/jOOQ codegen plugins.
+             Default reads the same COCKROACH_URL/USER/PASSWORD env vars that
+             the Spring runtime uses (see application.yaml); the
+             `local-defaults` profile below supplies localhost defaults when
+             those env vars are unset. -->
+        <cockroach.url>${env.COCKROACH_URL}</cockroach.url>
+        <cockroach.user>${env.COCKROACH_USER}</cockroach.user>
+        <cockroach.password>${env.COCKROACH_PASSWORD}</cockroach.password>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>local-defaults</id>
+            <activation>
+                <property><name>!env.COCKROACH_URL</name></property>
+            </activation>
+            <properties>
+                <cockroach.url>jdbc:postgresql://localhost:26257/cbsa?sslmode=disable</cockroach.url>
+                <cockroach.user>root</cockroach.user>
+                <cockroach.password/>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>
@@ -133,7 +152,7 @@
                     <locations>
                         <location>filesystem:src/main/resources/db/migration</location>
                     </locations>
-                    <cleanDisabled>false</cleanDisabled>
+                    <cleanDisabled>true</cleanDisabled>
                 </configuration>
                 <dependencies>
                     <dependency>
