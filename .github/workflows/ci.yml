@@ -25,10 +25,15 @@ jobs:
           cache: maven
 
       - name: Install CockroachDB v24.3.4
+        env:
+          COCKROACH_TGZ_SHA256: 816f12aca8f05d9045ff8b12cb32341833ad4c43e414cb84b0bbb2cbe982597a
         run: |
           set -euo pipefail
-          curl -sL https://binaries.cockroachdb.com/cockroach-v24.3.4.linux-amd64.tgz \
-            | tar -xz
+          curl -fsSL --retry 3 \
+            -o cockroach.tgz \
+            https://binaries.cockroachdb.com/cockroach-v24.3.4.linux-amd64.tgz
+          echo "${COCKROACH_TGZ_SHA256}  cockroach.tgz" | sha256sum -c -
+          tar -xzf cockroach.tgz
           sudo install -m 755 cockroach-v24.3.4.linux-amd64/cockroach \
             /usr/local/bin/cockroach
           cockroach version | head -2
