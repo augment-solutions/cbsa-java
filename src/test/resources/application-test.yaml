@@ -1,5 +1,0 @@
-spring:
-  datasource:
-    url: ${COCKROACH_URL:jdbc:postgresql://localhost:26257/cbsa?sslmode=disable}
-    username: ${COCKROACH_USER:root}
-    password: ${COCKROACH_PASSWORD:}
