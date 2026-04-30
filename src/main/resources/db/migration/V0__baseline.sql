@@ -31,7 +31,7 @@ CREATE TABLE account (
     account_type         VARCHAR(8)     NOT NULL DEFAULT '',
     interest_rate        NUMERIC(6,2)   NOT NULL DEFAULT 0,
     opened               DATE           NOT NULL,
-    overdraft_limit      INTEGER        NOT NULL DEFAULT 0,
+    overdraft_limit      NUMERIC(12,2)  NOT NULL DEFAULT 0,
     last_stmt_date       DATE,
     next_stmt_date       DATE,
     available_balance    NUMERIC(12,2)  NOT NULL DEFAULT 0,
