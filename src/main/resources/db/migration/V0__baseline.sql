@@ -5,7 +5,7 @@
 --   PIC 9(n)        -> integer / bigint sized to fit n digits
 --   PIC 9(n)V99     -> numeric(n+2,2)
 --   PIC X(n)        -> varchar(n) (NOT NULL with default '' to match COBOL spaces)
---   PIC 9(n) date   -> date (8-digit DDMMYYYY/YYYYMMDD decoded in app layer)
+--   PIC 9(8) date   -> date (DDMMYYYY in COBOL, decoded in app layer)
 --   REDEFINES       -> not modeled; the underlying scalar wins.
 --   eyecatcher      -> not persisted; an in-memory invariant only.
 --
@@ -71,8 +71,8 @@ CREATE TABLE control (
     id                  CHAR(6)  NOT NULL PRIMARY KEY DEFAULT 'GLOBAL',
     customer_count      BIGINT   NOT NULL DEFAULT 0,
     customer_last       BIGINT   NOT NULL DEFAULT 0,
-    account_count       INTEGER  NOT NULL DEFAULT 0,
-    account_last        INTEGER  NOT NULL DEFAULT 0
+    account_count       BIGINT   NOT NULL DEFAULT 0,
+    account_last        BIGINT   NOT NULL DEFAULT 0
 );
 
 INSERT INTO control (id) VALUES ('GLOBAL') ON CONFLICT DO NOTHING;
