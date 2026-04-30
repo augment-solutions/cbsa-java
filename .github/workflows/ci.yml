@@ -35,6 +35,9 @@ jobs:
 
       - name: Start CockroachDB (in-memory single node)
         run: |
+          # The cockroach CLI auto-reads COCKROACH_URL from the env, but our
+          # job-level value is the JDBC form Spring needs. Drop it for the CLI.
+          unset COCKROACH_URL
           cockroach start-single-node \
             --insecure \
             --store=type=mem,size=2GiB \
