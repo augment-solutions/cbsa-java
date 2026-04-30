@@ -122,10 +122,12 @@ Never persist both forms.
   program throws it with its program-specific abend code (e.g. `CVR1` for
   INQCUST VSAM read failure) only for genuinely unrecoverable errors.
 - A single `@ControllerAdvice` (`CbsaExceptionHandler`) maps:
-    - `CbsaNotFoundException`  → 404
     - `MethodArgumentNotValid`  → 400
     - `CbsaAbendException`      → 500 with `{ abendCode, message }`
     - everything else           → 500 with abend code `UNEX`.
+- "Not found" is **never** an exception — see §6: controllers translate
+  the commarea fail flag (e.g. `INQCUST-INQ-FAIL-CD = '1'`) into a
+  `ResponseEntity` with status 404 directly.
 
 ## 9. Testing
 

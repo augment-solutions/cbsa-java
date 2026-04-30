@@ -17,7 +17,9 @@ This repository is produced by the Cosmos COBOL→Java migration agents.
 
 ## Local development
 
-Prereqs: JDK 25, Maven 3.9+, CockroachDB v24.3.
+Prereqs: JDK 25 and CockroachDB v24.3. The Maven wrapper (`./mvnw`)
+downloads its own pinned Maven distribution (3.9.9) — a system Maven
+install is not required.
 
 ```bash
 cockroach start-single-node --insecure \
