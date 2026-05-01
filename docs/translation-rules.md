@@ -223,11 +223,21 @@ escalated to operations.
 - The wrap may live in either the repository or the service layer,
   whichever owns the `PROCTRAN` insert call site:
   - Repositories that own their own transaction (e.g. `CreaccRepository`,
-    `CrecustRepository`, `UpdcustRepository`, `DbcrfunRepository`) wrap
-    the `PROCTRAN` `try/catch` directly inside the transactional method.
+    `CrecustRepository`, `UpdcustRepository`) wrap the `PROCTRAN`
+    `try/catch` directly inside the transactional method.
   - Services that drive a `TransactionTemplate` themselves (e.g.
-    `DelaccService`, `DelcusService`, `XfrfunService`) wrap the call from
-    the service. The repository method itself stays a plain insert.
+    `DbcrfunService`, `DelaccService`, `DelcusService`, `XfrfunService`)
+    own the transaction; the wrap may live either in the service (e.g.
+    `DelaccService`, `DelcusService`, `XfrfunService`) or in the
+    repository's `insertProcTran(...)` method called from inside that
+    template (e.g. `DbcrfunRepository`).
+- `PROCTRAN_ABEND_CODE` is for PROCTRAN insert failures only. Reserve a
+  separate `RETRY_EXHAUSTED_ABEND_CODE = "XRTY"` for the outer
+  `catch (DataAccessException)` around `CrdbRetry.run(...)` so a
+  serialization-retry exhaustion does not get reported as `HWPT`. Any
+  other `DataAccessException` that escapes `CrdbRetry.run` (in practice
+  none, since inner catches handle each call site) should be re-thrown
+  and surfaced via the global `Exception` handler as `UNEX`.
 - Issues #12 and #19 are the empirical source for this rule: PROCTRAN
   failures in CRECUST / UPDCUST were originally returning fail codes
   `"1"` / `"3"`, hiding audit-trail outages behind a 200 OK response.

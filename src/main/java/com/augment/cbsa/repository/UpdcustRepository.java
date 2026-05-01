@@ -34,6 +34,9 @@ public class UpdcustRepository {
     // failure to surface as CbsaAbendException("HWPT") rather than a domain
     // fail code so the global handler classifies it as a 500 abend.
     private static final String PROCTRAN_ABEND_CODE = "HWPT";
+    // Distinct code for serialization-retry exhaustion escaping CrdbRetry, so
+    // operationally it is not conflated with a PROCTRAN audit-trail outage.
+    private static final String RETRY_EXHAUSTED_ABEND_CODE = "XRTY";
 
     private final DSLContext dsl;
 
@@ -65,7 +68,16 @@ public class UpdcustRepository {
         } catch (RollbackFailureException exception) {
             return exception.result();
         } catch (DataAccessException exception) {
-            throw new CbsaAbendException(PROCTRAN_ABEND_CODE, "UPDCUST failed to persist the customer data.", exception);
+            // Inner catches translate every persistence failure into either a
+            // domain fail code or PROCTRAN_ABEND_CODE; the only path that
+            // escapes CrdbRetry.run is serialization-retry exhaustion.
+            if (isSerializationFailure(exception)) {
+                throw new CbsaAbendException(
+                        RETRY_EXHAUSTED_ABEND_CODE,
+                        "UPDCUST aborted after exhausting Cockroach serialization retries.",
+                        exception);
+            }
+            throw exception;
         }
     }
 
