@@ -9,6 +9,7 @@ import com.augment.cbsa.web.delcus.dto.DelcusRequestDto;
 import com.augment.cbsa.web.delcus.dto.DelcusResponseDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -40,7 +41,8 @@ public class DelcusController {
     @DeleteMapping("/remove/{customerNumber}")
     public ResponseEntity<?> delete(
             @PathVariable
-            @Pattern(regexp = "[0-9]{1,10}")
+            @Size(max = 10)
+            @Pattern(regexp = "0*[1-9][0-9]*")
             String customerNumber,
             @Valid @RequestBody DelcusRequestDto requestDto
     ) {

@@ -11,6 +11,7 @@ import com.augment.cbsa.domain.InqcustResult;
 import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.CrdbRetry;
 import com.augment.cbsa.repository.DelcusRepository;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -102,6 +103,9 @@ public class DelcusService {
         try {
             deletedRows = delcusRepository.deleteAccount(account.sortcode(), account.accountNumber());
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(
                     DELETE_ABEND_CODE,
                     "DELCUS failed to delete account %d.".formatted(account.accountNumber()),
@@ -122,6 +126,9 @@ public class DelcusService {
         try {
             delcusRepository.insertAccountDeletionAudit(account, transactionReference, transactionDate, transactionTime);
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(
                     PROCTRAN_ABEND_CODE,
                     "DELCUS failed to write the account deletion audit trail.",
@@ -135,11 +142,20 @@ public class DelcusService {
         try {
             deletedRows = delcusRepository.deleteCustomer(customer.sortcode(), customer.customerNumber());
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(DELETE_ABEND_CODE, "DELCUS failed to delete the customer data.", exception);
         }
 
         if (deletedRows == 0) {
-            return;
+            // INQCUST already confirmed the customer exists within this transaction;
+            // a 0-row delete therefore indicates a concurrent removal and must abend
+            // rather than report success.
+            throw new CbsaAbendException(
+                    DELETE_ABEND_CODE,
+                    "DELCUS could not delete customer %d (concurrently removed).".formatted(customer.customerNumber())
+            );
         }
         if (deletedRows != 1) {
             throw new CbsaAbendException(
@@ -151,11 +167,25 @@ public class DelcusService {
         try {
             delcusRepository.insertCustomerDeletionAudit(customer, transactionReference, transactionDate, transactionTime);
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(
                     PROCTRAN_ABEND_CODE,
                     "DELCUS failed to write the customer deletion audit trail.",
                     exception
             );
         }
+    }
+
+    private static boolean isSerializationFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SQLException sqlException && "40001".equals(sqlException.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
