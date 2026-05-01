@@ -39,7 +39,7 @@ class InqcustControllerWebMvcTest {
         mockMvc.perform(get("/api/v1/inqcust/0"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.failCode").value("R"))
-                .andExpect(jsonPath("$.message").value("Unable to find a random customer after exhausting retry attempts."));
+                .andExpect(jsonPath("$.detail").value("Unable to find a random customer after exhausting retry attempts."));
     }
 
     @Test

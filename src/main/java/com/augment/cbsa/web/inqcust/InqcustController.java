@@ -3,7 +3,6 @@ package com.augment.cbsa.web.inqcust;
 import com.augment.cbsa.domain.CustomerDetails;
 import com.augment.cbsa.domain.InqcustRequest;
 import com.augment.cbsa.domain.InqcustResult;
-import com.augment.cbsa.error.CbsaFailureResponse;
 import com.augment.cbsa.service.InqcustService;
 import com.augment.cbsa.web.inqcust.dto.InqcustDateDto;
 import com.augment.cbsa.web.inqcust.dto.InqcustRequestDto;
@@ -13,6 +12,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,17 +44,39 @@ public class InqcustController {
         InqcustResult result = inqcustService.inquire(new InqcustRequest(requestDto.customerNumber()));
 
         if (!result.inquirySuccess()) {
-            CbsaFailureResponse failureResponse = new CbsaFailureResponse(result.failCode(), result.message());
-            if (result.isNotFoundFailure()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(failureResponse);
-            }
-            if (result.isRandomRetryExhaustedFailure()) {
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(failureResponse);
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(failureResponse);
+            return ResponseEntity.status(failureStatus(result)).body(failureBody(result));
         }
 
         return ResponseEntity.ok(toResponse(result));
+    }
+
+    private HttpStatus failureStatus(InqcustResult result) {
+        if (result.isNotFoundFailure()) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (result.isRandomRetryExhaustedFailure()) {
+            return HttpStatus.SERVICE_UNAVAILABLE;
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private ProblemDetail failureBody(InqcustResult result) {
+        HttpStatus status = failureStatus(result);
+        ProblemDetail problemDetail = ProblemDetail.forStatus(status);
+        problemDetail.setTitle(failureTitle(result));
+        problemDetail.setDetail(result.message());
+        problemDetail.setProperty("failCode", result.failCode());
+        return problemDetail;
+    }
+
+    private String failureTitle(InqcustResult result) {
+        if (result.isNotFoundFailure()) {
+            return "Customer not found";
+        }
+        if (result.isRandomRetryExhaustedFailure()) {
+            return "Customer inquiry retry exhausted";
+        }
+        return "Customer inquiry failed";
     }
 
     private InqcustResponseDto toResponse(InqcustResult result) {

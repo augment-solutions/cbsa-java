@@ -259,7 +259,99 @@ escalated to operations.
   failures in CRECUST / UPDCUST were originally returning fail codes
   `"1"` / `"3"`, hiding audit-trail outages behind a 200 OK response.
 
-## 13. Out of scope
+## 13. Recurring patterns from PR #4 review
+
+These seven patterns came out of the six review rounds on the INQCUST POC
+(PR #4) and the cleanup pass that followed (issues #5, #6). Treat each one
+as a hard rule for every program PR.
+
+1. **Single error wire shape: `ProblemDetail` (RFC 7807) end-to-end.**
+   Successful responses are domain DTOs; *every* error response (4xx/5xx)
+   is a `org.springframework.http.ProblemDetail`. The `@ControllerAdvice`
+   (`CbsaExceptionHandler`) builds the body for thrown exceptions
+   (`MethodArgumentNotValidException` → 400, `CbsaAbendException` → 500,
+   `Exception` → 500/`UNEX`); controllers that translate a domain "fail"
+   result do so with the same shape:
+   ```java
+   ProblemDetail pd = ProblemDetail.forStatus(status);
+   pd.setTitle("<Program> <intent> failed");
+   pd.setDetail(result.message());
+   pd.setProperty("failCode", result.failCode());
+   return ResponseEntity.status(status).body(pd);
+   ```
+   No per-program legacy result-record (e.g. a `{failCode,message}`
+   record) leaks to the wire on the error path.
+2. **Defensive null-checks at service-method boundaries.** Every public
+   `*Service` method begins with
+   `Objects.requireNonNull(arg, "arg must not be null")` for each
+   parameter, and every constructor of an immutable result record
+   (`*Result.success(...)`, `*Result.failure(...)`) null-checks its
+   arguments before assigning fields. This catches programming errors at
+   the boundary instead of letting them surface as NPEs deep inside a
+   transaction.
+3. **`@Valid` on every `@RequestBody`.** Any controller method that
+   accepts a `@RequestBody` DTO must mark the parameter `@Valid`, and
+   every nested DTO/Key reference inside that DTO must also be `@Valid`.
+   Validation annotations on a DTO that is never `@Valid`-bound are dead
+   code. Validation lives on the record components (`@NotNull`,
+   `@NotBlank`, `@Size`, `@Pattern`), **not** as `Objects.requireNonNull`
+   inside the canonical constructor — see §6 for why.
+4. **Deterministic randomness via injected source / clock.** Services
+   must not call `ThreadLocalRandom`, `Math.random`, `new Random()`, or
+   `Instant.now()` directly. Inject a `Random` bean (e.g.
+   `@Qualifier("applicationRandom")`), a `Clock` bean, or a small
+   per-domain interface (`RandomCustomerNumberGenerator`) and provide a
+   deterministic test double in unit and web-MVC tests. Integration
+   tests must not depend on probabilistic outcomes.
+5. **Retry off-by-one: random-exhaustion vs not-found.** When a bounded
+   retry loop in random-pick mode exhausts without finding a target, the
+   response is a distinct "retry exhausted" outcome (fail code `"R"` →
+   HTTP 503), not a generic backend abend. "Exact key not found" remains
+   fail code `"1"` → HTTP 404. Controllers MUST distinguish the two via
+   `result.isRandomRetryExhaustedFailure()` / `result.isNotFoundFailure()`
+   helpers on the result record.
+6. **Control-baseline preservation in tests and writes.** The `control`
+   table holds Flyway-seeded invariants (sortcode, last_*_number,
+   *_count). Production code MUST `UPDATE` rather than `DELETE`+insert.
+   Integration-test cleanup MUST either skip `control` entirely
+   (preferred) or re-insert the canonical baseline row after deleting.
+   The canonical baseline row is sortcode `"987654"` with all
+   counters/last-numbers `0`.
+7. **Empty-table → 404, not 500.** For read paths, an empty target
+   table is semantically "not found", matching the COBOL behavior where
+   an empty file produces the same fail code as a missing record. Map
+   empty-table outcomes to the regular not-found fail code (`"1"` →
+   404), never to a backend-failure code or a 500.
+
+Issues #5 and #6 (with PR #4 as the empirical source) document why each
+of these rules exists.
+
+## 14. Translator checklist
+
+Quick scan before opening a program PR. Every item must hold.
+
+- [ ] Public `*Service` methods start with `Objects.requireNonNull(...)`
+      on each parameter.
+- [ ] Every `@RequestBody` DTO param is annotated `@Valid`; nested DTOs
+      reachable from it carry `@Valid` on their references.
+- [ ] Required record components use `@NotNull` / `@NotBlank` / `@Size`
+      / `@Pattern`; no `requireNonNull` inside record canonical
+      constructors of request DTOs.
+- [ ] All error paths return `ProblemDetail` — no per-program error
+      record on the wire.
+- [ ] Stochastic behavior uses an injected `Random` / `Clock` /
+      generator interface with a deterministic test double.
+- [ ] Retry-exhaustion → fail code `"R"` → 503; not-found → `"1"` →
+      404; empty-table → `"1"` → 404.
+- [ ] `control` is `UPDATE`d, never `DELETE`+inserted in production
+      code; tests skip `control` or re-seed the baseline row.
+- [ ] PROCTRAN insert failures are wrapped as
+      `CbsaAbendException(PROCTRAN_ABEND_CODE, ...)` (§12); 40001 is
+      re-thrown for `CrdbRetry`.
+- [ ] Sortcode and other zero-padded fixed-width identifiers are quoted
+      in YAML, validated `[0-9]{6}`, kept as `String` end-to-end (§10).
+
+## 15. Out of scope
 
 `BNK1*`, `BNKMENU` (BMS terminal handlers), `BANKDATA` (seed loader; replaced
 by Flyway), and `ABNDPROC` (replaced by `@ControllerAdvice`) are dropped and
