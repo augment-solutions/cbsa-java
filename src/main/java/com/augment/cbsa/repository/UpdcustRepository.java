@@ -179,7 +179,7 @@ public class UpdcustRepository {
     }
 
     private boolean isProvidedForSingleFieldUpdate(String value) {
-        return !isAllSpaces(value) || !startsWithSpace(value);
+        return !isBlankish(value);
     }
 
     private boolean startsWithNonSpace(String value) {
