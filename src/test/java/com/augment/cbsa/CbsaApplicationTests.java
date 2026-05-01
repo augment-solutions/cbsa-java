@@ -1,6 +1,7 @@
 package com.augment.cbsa;
 
 import com.augment.cbsa.repository.AccountRepository;
+import com.augment.cbsa.repository.CreaccRepository;
 import com.augment.cbsa.repository.CrecustRepository;
 import com.augment.cbsa.repository.CustomerRepository;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class CbsaApplicationTests {
 
     @MockitoBean
     private CrecustRepository crecustRepository;
+
+    @MockitoBean
+    private CreaccRepository creaccRepository;
 
     @Test
     void contextLoads() {
