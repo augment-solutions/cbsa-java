@@ -105,7 +105,7 @@ public class InqacccuController {
                 account.accountType(),
                 account.interestRate(),
                 toCobolDate(account.opened()),
-                account.overdraftLimit().longValueExact(),
+                account.overdraftLimit().toBigInteger().longValueExact(),
                 toCobolDate(account.lastStatementDate()),
                 toCobolDate(account.nextStatementDate()),
                 account.availableBalance(),

@@ -71,31 +71,33 @@ public class InqacccuService {
         List<AccountDetails> accounts = new ArrayList<>();
         InqacccuResult pendingFailure = null;
         try {
-            while (true) {
-                var nextAccount = accountRepository.fetchNext(cursor);
-                if (nextAccount.isEmpty()) {
-                    break;
+            try {
+                while (true) {
+                    var nextAccount = accountRepository.fetchNext(cursor);
+                    if (nextAccount.isEmpty()) {
+                        break;
+                    }
+                    accounts.add(nextAccount.get());
                 }
-                accounts.add(nextAccount.get());
+            } catch (DataAccessException exception) {
+                pendingFailure = InqacccuResult.failure(
+                        FETCH_FAILURE_CODE,
+                        customerNumber,
+                        true,
+                        "INQACCCU failed while fetching account data."
+                );
             }
-        } catch (DataAccessException exception) {
-            pendingFailure = InqacccuResult.failure(
-                    FETCH_FAILURE_CODE,
-                    customerNumber,
-                    true,
-                    "INQACCCU failed while fetching account data."
-            );
-        }
-
-        try {
-            accountRepository.close(cursor);
-        } catch (DataAccessException exception) {
-            return InqacccuResult.failure(
-                    CLOSE_FAILURE_CODE,
-                    customerNumber,
-                    true,
-                    "INQACCCU failed to close the account cursor."
-            );
+        } finally {
+            try {
+                accountRepository.close(cursor);
+            } catch (DataAccessException exception) {
+                pendingFailure = InqacccuResult.failure(
+                        CLOSE_FAILURE_CODE,
+                        customerNumber,
+                        true,
+                        "INQACCCU failed to close the account cursor."
+                );
+            }
         }
 
         if (pendingFailure != null) {
