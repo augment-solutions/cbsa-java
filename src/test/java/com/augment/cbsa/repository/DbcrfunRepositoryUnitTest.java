@@ -69,6 +69,15 @@ class DbcrfunRepositoryUnitTest {
                 new BigDecimal("25.00")
         ))
                 .isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("wrapped");
+                .hasMessageContaining("wrapped")
+                // The exact same DAE instance must escape so CrdbRetry can walk
+                // its cause chain and recognise the SQLSTATE 40001 that drives
+                // the retry decision; if a future change loses that link,
+                // CrdbRetry stops retrying serialization failures silently.
+                .satisfies(thrown -> {
+                    Throwable cause = thrown.getCause();
+                    assertThat(cause).isInstanceOf(SQLException.class);
+                    assertThat(((SQLException) cause).getSQLState()).isEqualTo("40001");
+                });
     }
 }
