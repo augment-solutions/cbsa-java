@@ -45,8 +45,11 @@ public class InqcustController {
 
         if (!result.inquirySuccess()) {
             CbsaFailureResponse failureResponse = new CbsaFailureResponse(result.failCode(), result.message());
-            if ("1".equals(result.failCode())) {
+            if (result.isNotFoundFailure()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(failureResponse);
+            }
+            if (result.isRandomRetryExhaustedFailure()) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(failureResponse);
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(failureResponse);
         }

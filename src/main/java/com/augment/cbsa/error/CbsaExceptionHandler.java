@@ -1,6 +1,8 @@
 package com.augment.cbsa.error;
 
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,8 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 
 @RestControllerAdvice
 public class CbsaExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(CbsaExceptionHandler.class);
 
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
@@ -37,9 +41,11 @@ public class CbsaExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleUnexpected(Exception exception) {
+        logger.error("Unhandled exception while processing request", exception);
+
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problemDetail.setTitle("Unexpected error");
-        problemDetail.setDetail(exception.getMessage() == null ? "An unexpected error occurred." : exception.getMessage());
+        problemDetail.setDetail("Internal server error");
         problemDetail.setProperty("abendCode", "UNEX");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }

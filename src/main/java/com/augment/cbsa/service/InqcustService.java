@@ -17,6 +17,7 @@ public class InqcustService {
     private static final String ABEND_CODE = "CVR1";
     private static final String BACKEND_FAILURE_CODE = "9";
     private static final String NOT_FOUND_CODE = "1";
+    private static final String RANDOM_RETRY_EXHAUSTED_CODE = "R";
     private static final long RANDOM_CUSTOMER_NUMBER = 0L;
     private static final long LAST_CUSTOMER_NUMBER = 9_999_999_999L;
     private static final int RANDOM_RETRY_LIMIT = 1000;
@@ -66,14 +67,22 @@ public class InqcustService {
         }
 
         long highestCustomerNumber = lastCustomer.get().customerNumber();
-        for (int attempt = 0; attempt <= RANDOM_RETRY_LIMIT; attempt++) {
-            long candidate = ThreadLocalRandom.current().nextLong(1, highestCustomerNumber + 1);
+        for (int attempt = 0; attempt < RANDOM_RETRY_LIMIT; attempt++) {
+            long candidate = nextRandomCustomerNumber(highestCustomerNumber);
             Optional<CustomerDetails> customer = customerRepository.findBySortcodeAndCustomerNumber(sortcode, candidate);
             if (customer.isPresent()) {
                 return InqcustResult.success(customer.get());
             }
         }
 
-        return InqcustResult.failure(NOT_FOUND_CODE, RANDOM_CUSTOMER_NUMBER, "Unable to find a random customer.");
+        return InqcustResult.failure(
+                RANDOM_RETRY_EXHAUSTED_CODE,
+                RANDOM_CUSTOMER_NUMBER,
+                "Unable to find a random customer after exhausting retry attempts."
+        );
+    }
+
+    long nextRandomCustomerNumber(long highestCustomerNumber) {
+        return ThreadLocalRandom.current().nextLong(1, highestCustomerNumber + 1);
     }
 }

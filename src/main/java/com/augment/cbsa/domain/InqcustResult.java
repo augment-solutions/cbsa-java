@@ -20,6 +20,10 @@ public record InqcustResult(
         if (!inquirySuccess && customer != null) {
             throw new IllegalArgumentException("Failure results must not include a customer");
         }
+
+        if (!inquirySuccess && (message == null || message.isBlank())) {
+            throw new IllegalArgumentException("Failure results must include a non-blank message");
+        }
     }
 
     public static InqcustResult success(CustomerDetails customer) {
@@ -27,6 +31,14 @@ public record InqcustResult(
     }
 
     public static InqcustResult failure(String failCode, long customerNumber, String message) {
-        return new InqcustResult(false, failCode, customerNumber, null, Objects.requireNonNull(message));
+        return new InqcustResult(false, failCode, customerNumber, null, message);
+    }
+
+    public boolean isNotFoundFailure() {
+        return !inquirySuccess && "1".equals(failCode);
+    }
+
+    public boolean isRandomRetryExhaustedFailure() {
+        return !inquirySuccess && "R".equals(failCode);
     }
 }
