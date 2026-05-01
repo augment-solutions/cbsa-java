@@ -34,7 +34,7 @@ public class CrecustService {
             DateTimeFormatter.ofPattern("ddMMuuuu").withResolverStyle(ResolverStyle.STRICT);
     private static final int CREDIT_AGENCY_COUNT = 5;
     private static final int REVIEW_DATE_BOUND = 20;
-    private static final long CREDIT_AGENCY_TIMEOUT_SECONDS = 6;
+    private static final long CREDIT_AGENCY_REPLY_WINDOW_SECONDS = 3;
     private static final List<String> VALID_TITLES = List.of(
             "Professor", "Mr", "Mrs", "Miss", "Ms", "Dr", "Drs", "Lord", "Sir", "Lady", ""
     );
@@ -151,6 +151,7 @@ public class CrecustService {
             futures.add(creditAgencyService.requestCreditScore(request, agencyNumber));
         }
 
+        long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(CREDIT_AGENCY_REPLY_WINDOW_SECONDS);
         int totalScore = 0;
         int returnedScores = 0;
         boolean interrupted = false;
@@ -160,7 +161,13 @@ public class CrecustService {
                 continue;
             }
             try {
-                Optional<Integer> maybeScore = future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                long remainingNanos = deadlineNanos - System.nanoTime();
+                if (remainingNanos <= 0) {
+                    future.cancel(true);
+                    continue;
+                }
+
+                Optional<Integer> maybeScore = future.get(remainingNanos, TimeUnit.NANOSECONDS);
                 if (maybeScore.isPresent()) {
                     totalScore += maybeScore.get();
                     returnedScores++;
