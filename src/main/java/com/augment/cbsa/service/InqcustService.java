@@ -7,7 +7,6 @@ import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.CustomerRepository;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 import org.jooq.exception.DataAccessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,11 +23,17 @@ public class InqcustService {
     private static final int RANDOM_RETRY_LIMIT = 1000;
 
     private final CustomerRepository customerRepository;
+    private final RandomCustomerNumberGenerator randomCustomerNumberGenerator;
     private final String sortcode;
 
-    public InqcustService(CustomerRepository customerRepository, @Value("${cbsa.sortcode}") String sortcode) {
+    public InqcustService(
+            CustomerRepository customerRepository,
+            @Value("${cbsa.sortcode}") String sortcode,
+            RandomCustomerNumberGenerator randomCustomerNumberGenerator
+    ) {
         this.customerRepository = customerRepository;
         this.sortcode = sortcode;
+        this.randomCustomerNumberGenerator = randomCustomerNumberGenerator;
     }
 
     public InqcustResult inquire(InqcustRequest request) {
@@ -71,7 +76,7 @@ public class InqcustService {
 
         long highestCustomerNumber = lastCustomer.get().customerNumber();
         for (int attempt = 0; attempt < RANDOM_RETRY_LIMIT; attempt++) {
-            long candidate = nextRandomCustomerNumber(highestCustomerNumber);
+            long candidate = randomCustomerNumberGenerator.nextCustomerNumber(highestCustomerNumber);
             Optional<CustomerDetails> customer = customerRepository.findBySortcodeAndCustomerNumber(sortcode, candidate);
             if (customer.isPresent()) {
                 return InqcustResult.success(customer.get());
@@ -83,9 +88,5 @@ public class InqcustService {
                 RANDOM_CUSTOMER_NUMBER,
                 "Unable to find a random customer after exhausting retry attempts."
         );
-    }
-
-    long nextRandomCustomerNumber(long highestCustomerNumber) {
-        return ThreadLocalRandom.current().nextLong(1, highestCustomerNumber + 1);
     }
 }

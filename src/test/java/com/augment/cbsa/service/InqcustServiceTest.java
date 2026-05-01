@@ -9,12 +9,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static com.augment.cbsa.jooq.Tables.ACCOUNT;
 import static com.augment.cbsa.jooq.Tables.CONTROL;
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class InqcustServiceTest extends AbstractCockroachIntegrationTest {
@@ -24,6 +26,9 @@ class InqcustServiceTest extends AbstractCockroachIntegrationTest {
 
     @Autowired
     private InqcustService inqcustService;
+
+    @MockBean
+    private RandomCustomerNumberGenerator randomCustomerNumberGenerator;
 
     @BeforeEach
     void cleanDatabase() {
@@ -50,12 +55,13 @@ class InqcustServiceTest extends AbstractCockroachIntegrationTest {
     void randomCustomerModeAlwaysReturnsAnExistingCustomer() {
         insertCustomer(10L, "First Customer", "1 Example Road", LocalDate.of(1980, 1, 2), (short) 120, LocalDate.of(2024, 5, 6));
         insertCustomer(25L, "Last Customer", "99 Example Road", LocalDate.of(1990, 7, 8), (short) 640, LocalDate.of(2025, 3, 4));
+        when(randomCustomerNumberGenerator.nextCustomerNumber(25L)).thenReturn(11L, 25L);
 
         InqcustResult result = inqcustService.inquire(new InqcustRequest(0L));
 
         assertThat(result.inquirySuccess()).isTrue();
         assertThat(result.customer()).isNotNull();
-        assertThat(result.customer().customerNumber()).isIn(10L, 25L);
+        assertThat(result.customer().customerNumber()).isEqualTo(25L);
         assertThat(result.customer().creditScore()).isBetween(0, 999);
     }
 

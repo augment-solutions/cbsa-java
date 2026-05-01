@@ -21,7 +21,7 @@ class InqcustServiceUnitTest {
     @Test
     void rejectsNullRequestWithClearMessage() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
-        InqcustService service = new InqcustService(customerRepository, "987654");
+        InqcustService service = new InqcustService(customerRepository, "987654", highestCustomerNumber -> 1L);
 
         assertThatThrownBy(() -> service.inquire(null))
                 .isInstanceOf(NullPointerException.class)
@@ -32,12 +32,7 @@ class InqcustServiceUnitTest {
     @Test
     void randomModeStopsAtRetryLimitAndReturnsRetryExhaustedFailure() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
-        InqcustService service = new InqcustService(customerRepository, "987654") {
-            @Override
-            long nextRandomCustomerNumber(long highestCustomerNumber) {
-                return 1L;
-            }
-        };
+        InqcustService service = new InqcustService(customerRepository, "987654", highestCustomerNumber -> 1L);
         when(customerRepository.findLastBySortcode("987654")).thenReturn(Optional.of(customer(2L)));
         when(customerRepository.findBySortcodeAndCustomerNumber("987654", 1L)).thenReturn(Optional.empty());
 
