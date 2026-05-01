@@ -177,8 +177,13 @@ public class CrecustService {
         int totalScore = 0;
         int returnedScores = 0;
         for (CompletableFuture<Optional<Integer>> future : futures) {
-            if (!future.isDone() || future.isCompletedExceptionally() || future.isCancelled()) {
-                future.cancel(true);
+            if (future.isCompletedExceptionally() || future.isCancelled()) {
+                continue;
+            }
+            // cancel(true) returns false if the future already completed
+            // normally, in which case we still harvest its score; this avoids
+            // dropping replies that completed between isDone() and cancel().
+            if (!future.isDone() && future.cancel(true)) {
                 continue;
             }
             try {
