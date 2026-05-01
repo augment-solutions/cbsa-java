@@ -1,8 +1,9 @@
 package com.augment.cbsa;
 
 import com.augment.cbsa.service.RandomCustomerNumberGenerator;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -10,11 +11,22 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class CbsaApplication {
 
     @Bean
-    RandomCustomerNumberGenerator randomCustomerNumberGenerator() {
-        return highestCustomerNumber -> ThreadLocalRandom.current().nextLong(1, highestCustomerNumber + 1);
+    Random applicationRandom() {
+        return new Random();
+    }
+
+    @Bean
+    RandomCustomerNumberGenerator randomCustomerNumberGenerator(@Qualifier("applicationRandom") Random applicationRandom) {
+        return highestCustomerNumber -> {
+            if (highestCustomerNumber < 1) {
+                throw new IllegalArgumentException("highestCustomerNumber must be positive");
+            }
+            return applicationRandom.nextLong(highestCustomerNumber) + 1;
+        };
     }
 
     public static void main(String[] args) {
         SpringApplication.run(CbsaApplication.class, args);
     }
 }
+
