@@ -5,6 +5,7 @@ import com.augment.cbsa.domain.InqcustRequest;
 import com.augment.cbsa.domain.InqcustResult;
 import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.CustomerRepository;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import org.jooq.exception.DataAccessException;
@@ -31,6 +32,8 @@ public class InqcustService {
     }
 
     public InqcustResult inquire(InqcustRequest request) {
+        Objects.requireNonNull(request, "request must not be null");
+
         try {
             long customerNumber = request.customerNumber();
 

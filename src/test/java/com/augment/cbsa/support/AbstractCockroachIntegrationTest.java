@@ -1,5 +1,8 @@
 package com.augment.cbsa.support;
 
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.DockerClientFactory;
@@ -7,6 +10,8 @@ import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Testcontainers
 public abstract class AbstractCockroachIntegrationTest {
@@ -24,11 +29,15 @@ public abstract class AbstractCockroachIntegrationTest {
 
     private static final class FallbackCockroachContainer extends CockroachContainer {
 
-        private static final String LOCAL_URL = "jdbc:postgresql://localhost:26257/cbsa?sslmode=disable";
+        private static final String LOCAL_FALLBACK_OPT_IN = "CBSA_TESTS_USE_LOCAL_COCKROACH";
+        private static final String LOCAL_DATABASE = "cbsa_test";
+        private static final String LOCAL_ADMIN_URL = "jdbc:postgresql://localhost:26257/defaultdb?sslmode=disable";
+        private static final String LOCAL_URL = "jdbc:postgresql://localhost:26257/" + LOCAL_DATABASE + "?sslmode=disable";
         private static final String LOCAL_USERNAME = "root";
         private static final String LOCAL_PASSWORD = "";
 
         private final boolean dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
+        private boolean localFallbackInitialized;
 
         private FallbackCockroachContainer(DockerImageName dockerImageName) {
             super(dockerImageName);
@@ -38,7 +47,10 @@ public abstract class AbstractCockroachIntegrationTest {
         public void start() {
             if (dockerAvailable) {
                 super.start();
+                return;
             }
+
+            initializeLocalFallback();
         }
 
         @Override
@@ -50,17 +62,64 @@ public abstract class AbstractCockroachIntegrationTest {
 
         @Override
         public String getJdbcUrl() {
-            return dockerAvailable ? super.getJdbcUrl() : LOCAL_URL;
+            if (dockerAvailable) {
+                return super.getJdbcUrl();
+            }
+
+            initializeLocalFallback();
+            return LOCAL_URL;
         }
 
         @Override
         public String getUsername() {
-            return dockerAvailable ? super.getUsername() : LOCAL_USERNAME;
+            if (dockerAvailable) {
+                return super.getUsername();
+            }
+
+            initializeLocalFallback();
+            return LOCAL_USERNAME;
         }
 
         @Override
         public String getPassword() {
-            return dockerAvailable ? super.getPassword() : LOCAL_PASSWORD;
+            if (dockerAvailable) {
+                return super.getPassword();
+            }
+
+            initializeLocalFallback();
+            return LOCAL_PASSWORD;
+        }
+
+        private synchronized void initializeLocalFallback() {
+            if (localFallbackInitialized) {
+                return;
+            }
+
+            // Protect developer databases: the local Cockroach fallback is opt-in via
+            // CBSA_TESTS_USE_LOCAL_COCKROACH=true and always targets the dedicated cbsa_test DB.
+            assumeTrue(isLocalFallbackOptedIn(), () -> "Cockroach integration tests require Docker or "
+                    + LOCAL_FALLBACK_OPT_IN
+                    + "=true to use the local fallback database '"
+                    + LOCAL_DATABASE
+                    + "'.");
+            ensureLocalDatabaseExists();
+            localFallbackInitialized = true;
+        }
+
+        private boolean isLocalFallbackOptedIn() {
+            return Boolean.parseBoolean(System.getProperty(LOCAL_FALLBACK_OPT_IN, System.getenv(LOCAL_FALLBACK_OPT_IN)));
+        }
+
+        private void ensureLocalDatabaseExists() {
+            try (var connection = DriverManager.getConnection(LOCAL_ADMIN_URL, LOCAL_USERNAME, LOCAL_PASSWORD);
+                 Statement statement = connection.createStatement()) {
+                statement.execute("CREATE DATABASE IF NOT EXISTS " + LOCAL_DATABASE);
+            } catch (SQLException exception) {
+                throw new IllegalStateException(
+                        "Unable to prepare local Cockroach fallback database '" + LOCAL_DATABASE + "'.",
+                        exception
+                );
+            }
         }
     }
 }

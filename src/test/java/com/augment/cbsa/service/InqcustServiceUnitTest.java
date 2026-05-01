@@ -9,12 +9,25 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class InqcustServiceUnitTest {
+
+    @Test
+    void rejectsNullRequestWithClearMessage() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        InqcustService service = new InqcustService(customerRepository, "987654");
+
+        assertThatThrownBy(() -> service.inquire(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("request must not be null");
+        verifyNoInteractions(customerRepository);
+    }
 
     @Test
     void randomModeStopsAtRetryLimitAndReturnsRetryExhaustedFailure() {

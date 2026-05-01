@@ -32,9 +32,11 @@ public class CbsaExceptionHandler {
 
     @ExceptionHandler(CbsaAbendException.class)
     public ResponseEntity<ProblemDetail> handleAbend(CbsaAbendException exception) {
+        logger.error("CBSA abend while processing request [abendCode={}]", exception.getAbendCode(), exception);
+
         ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problemDetail.setTitle("CBSA abend");
-        problemDetail.setDetail(exception.getMessage());
+        problemDetail.setDetail("Service abend");
         problemDetail.setProperty("abendCode", exception.getAbendCode());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
