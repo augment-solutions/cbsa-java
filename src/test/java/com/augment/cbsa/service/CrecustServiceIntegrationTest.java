@@ -2,6 +2,7 @@ package com.augment.cbsa.service;
 
 import com.augment.cbsa.domain.CrecustRequest;
 import com.augment.cbsa.domain.CrecustResult;
+import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.support.AbstractCockroachIntegrationTest;
 import java.time.LocalDate;
 import java.util.Random;
@@ -17,6 +18,7 @@ import static com.augment.cbsa.jooq.Tables.CONTROL;
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -74,6 +76,31 @@ class CrecustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
                 .from(PROCTRAN)
                 .fetchSingle(PROCTRAN.DESCRIPTION))
                 .startsWith("9876540000000001Dr Alice Examp10/01/2000");
+    }
+
+    @Test
+    void proctranInsertFailureSurfacesHwptAbend() {
+        // Force every PROCTRAN insert to fail at the database layer so the
+        // inner catch in CrecustRepository.createCustomer translates the
+        // failure into the HWPT system abend. Without #36's fix the catch
+        // never matches and the test sees a Spring DataIntegrityViolation
+        // bubble out instead, classified as UNEX.
+        when(reviewDateRandom.nextInt(20)).thenReturn(3);
+        dsl.execute("ALTER TABLE proctran ADD CONSTRAINT proctran_block_inserts CHECK (false) NOT VALID");
+        try {
+            assertThatThrownBy(() -> crecustService.create(new CrecustRequest(
+                    "Dr Alice Example",
+                    "1 Main Street",
+                    10_01_2000
+            )))
+                    .isInstanceOf(CbsaAbendException.class)
+                    .satisfies(thrown -> {
+                        CbsaAbendException abend = (CbsaAbendException) thrown;
+                        assertThat(abend.getAbendCode()).isEqualTo("HWPT");
+                    });
+        } finally {
+            dsl.execute("ALTER TABLE proctran DROP CONSTRAINT proctran_block_inserts");
+        }
     }
 
     @Test

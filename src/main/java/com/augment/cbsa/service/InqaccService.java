@@ -6,7 +6,7 @@ import com.augment.cbsa.domain.InqaccResult;
 import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.AccountRepository;
 import java.util.Objects;
-import org.jooq.exception.DataAccessException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -12,8 +12,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.jooq.Cursor;
-import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
