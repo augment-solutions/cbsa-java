@@ -1,5 +1,6 @@
 package com.augment.cbsa;
 
+import com.augment.cbsa.repository.AccountRepository;
 import com.augment.cbsa.repository.CustomerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,6 +21,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 })
 @ActiveProfiles("test")
 class CbsaApplicationTests {
+
+    @MockitoBean
+    private AccountRepository accountRepository;
 
     @MockitoBean
     private CustomerRepository customerRepository;
