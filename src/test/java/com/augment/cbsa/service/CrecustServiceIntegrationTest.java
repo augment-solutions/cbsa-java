@@ -86,8 +86,14 @@ class CrecustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
         // never matches and the test sees a Spring DataIntegrityViolation
         // bubble out instead, classified as UNEX.
         when(reviewDateRandom.nextInt(20)).thenReturn(3);
-        dsl.execute("ALTER TABLE proctran ADD CONSTRAINT proctran_block_inserts CHECK (false) NOT VALID");
+        // The Cockroach container is a singleton shared across every
+        // integration test class, so leaking 'proctran_block_inserts' would
+        // poison every later PROCTRAN write. Run the ADD inside the try so
+        // cleanup still fires if the assertion or service call throws, and
+        // use DROP ... IF EXISTS so we also recover from any constraint a
+        // previously-killed JVM may have left behind.
         try {
+            dsl.execute("ALTER TABLE proctran ADD CONSTRAINT proctran_block_inserts CHECK (false) NOT VALID");
             assertThatThrownBy(() -> crecustService.create(new CrecustRequest(
                     "Dr Alice Example",
                     "1 Main Street",
@@ -99,7 +105,7 @@ class CrecustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
                         assertThat(abend.getAbendCode()).isEqualTo("HWPT");
                     });
         } finally {
-            dsl.execute("ALTER TABLE proctran DROP CONSTRAINT proctran_block_inserts");
+            dsl.execute("ALTER TABLE proctran DROP CONSTRAINT IF EXISTS proctran_block_inserts");
         }
     }
 
