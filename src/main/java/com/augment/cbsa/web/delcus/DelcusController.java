@@ -50,7 +50,21 @@ public class DelcusController {
         // but DELCUS itself only consumes COMM-CUSTNO.
         Objects.requireNonNull(requestDto, "requestDto must not be null");
 
-        DelcusResult result = delcusService.delete(new DelcusRequest(Long.parseLong(customerNumber)));
+        long pathCustomerNumber = Long.parseLong(customerNumber);
+        // Reject body/path mismatches up front. The body's CommCustno is
+        // optional (pattern allows ""); when supplied it must agree with the
+        // path so we never silently delete the path target on a misaddressed
+        // request.
+        String bodyCustno = requestDto.delCus().commCustno();
+        if (bodyCustno != null && !bodyCustno.isEmpty()
+                && Long.parseLong(bodyCustno) != pathCustomerNumber) {
+            ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+            problemDetail.setTitle("Validation failed");
+            problemDetail.setDetail("Body CommCustno does not match path customerNumber.");
+            return ResponseEntity.badRequest().body(problemDetail);
+        }
+
+        DelcusResult result = delcusService.delete(new DelcusRequest(pathCustomerNumber));
         if (!result.deleteSuccess()) {
             return ResponseEntity.status(failureStatus(result)).body(failureBody(result));
         }
@@ -99,7 +113,10 @@ public class DelcusController {
                 customer.creditScore(),
                 toCobolDate(customer.csReviewDate()),
                 "Y",
-                ""
+                // CommDelFailCd is a fixed-width 1-char commarea slot;
+                // emit a single space on success to preserve the length-1
+                // contract for clients porting from COBOL.
+                " "
         ));
     }
 

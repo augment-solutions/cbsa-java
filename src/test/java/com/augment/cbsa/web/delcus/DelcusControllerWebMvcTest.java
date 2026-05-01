@@ -50,7 +50,67 @@ class DelcusControllerWebMvcTest {
                 .andExpect(jsonPath("$.DelCus.CommEye").value("CUST"))
                 .andExpect(jsonPath("$.DelCus.CommScode").value("987654"))
                 .andExpect(jsonPath("$.DelCus.CommCustno").value("0000000001"))
-                .andExpect(jsonPath("$.DelCus.CommDelSuccess").value("Y"));
+                .andExpect(jsonPath("$.DelCus.CommDelSuccess").value("Y"))
+                .andExpect(jsonPath("$.DelCus.CommDelFailCd").value(" "));
+    }
+
+    @Test
+    void rejectsBodyCommCustnoThatMismatchesPath() throws Exception {
+        String body = """
+                {
+                  "DelCus": {
+                    "CommEye": "CUST",
+                    "CommScode": "987654",
+                    "CommCustno": "0000000002",
+                    "CommName": "",
+                    "CommAddr": "",
+                    "CommDob": 0,
+                    "CommCreditScore": 0,
+                    "CommCsReviewDate": 0,
+                    "CommDelSuccess": " ",
+                    "CommDelFailCd": " "
+                  }
+                }
+                """;
+
+        mockMvc.perform(delete("/api/v1/delcus/remove/1").contentType(APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.detail").value("Body CommCustno does not match path customerNumber."));
+    }
+
+    @Test
+    void acceptsMatchingBodyCommCustno() throws Exception {
+        when(delcusService.delete(new DelcusRequest(1L))).thenReturn(DelcusResult.success(new CustomerDetails(
+                "987654",
+                1L,
+                "Mr Alice Example",
+                "1 Main Street",
+                LocalDate.of(2000, 1, 10),
+                430,
+                LocalDate.of(2026, 5, 8)
+        )));
+
+        String body = """
+                {
+                  "DelCus": {
+                    "CommEye": "CUST",
+                    "CommScode": "987654",
+                    "CommCustno": "0000000001",
+                    "CommName": "",
+                    "CommAddr": "",
+                    "CommDob": 0,
+                    "CommCreditScore": 0,
+                    "CommCsReviewDate": 0,
+                    "CommDelSuccess": " ",
+                    "CommDelFailCd": " "
+                  }
+                }
+                """;
+
+        mockMvc.perform(delete("/api/v1/delcus/remove/1").contentType(APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.DelCus.CommCustno").value("0000000001"));
     }
 
     @Test
