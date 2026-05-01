@@ -4,10 +4,12 @@ import com.augment.cbsa.repository.AccountRepository;
 import com.augment.cbsa.repository.CreaccRepository;
 import com.augment.cbsa.repository.CrecustRepository;
 import com.augment.cbsa.repository.DbcrfunRepository;
+import com.augment.cbsa.repository.DelaccRepository;
 import com.augment.cbsa.repository.DelcusRepository;
 import com.augment.cbsa.repository.CustomerRepository;
 import com.augment.cbsa.repository.UpdaccRepository;
 import com.augment.cbsa.repository.UpdcustRepository;
+import com.augment.cbsa.service.DelaccService;
 import com.augment.cbsa.service.DbcrfunService;
 import com.augment.cbsa.service.DelcusService;
 import org.junit.jupiter.api.Test;
@@ -52,10 +54,16 @@ class CbsaApplicationTests {
     private DelcusRepository delcusRepository;
 
     @MockitoBean
+    private DelaccRepository delaccRepository;
+
+    @MockitoBean
     private DbcrfunRepository dbcrfunRepository;
 
     @MockitoBean
     private DelcusService delcusService;
+
+    @MockitoBean
+    private DelaccService delaccService;
 
     @MockitoBean
     private DbcrfunService dbcrfunService;
