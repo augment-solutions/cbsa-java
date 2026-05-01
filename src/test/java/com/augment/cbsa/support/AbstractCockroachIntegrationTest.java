@@ -20,12 +20,23 @@ public abstract class AbstractCockroachIntegrationTest {
     protected static final CockroachContainer COCKROACH =
             new FallbackCockroachContainer(DockerImageName.parse("cockroachdb/cockroach:v24.3.4"));
 
-    static {
+    // Container is started lazily on first DynamicPropertySource access so that
+    // assumeTrue in the local fallback path can skip tests gracefully when neither
+    // Docker nor the opt-in local Cockroach is available, instead of failing the
+    // class with ExceptionInInitializerError from a static block.
+    private static volatile boolean started;
+
+    private static synchronized void ensureStarted() {
+        if (started) {
+            return;
+        }
         COCKROACH.start();
+        started = true;
     }
 
     @DynamicPropertySource
     static void registerCockroachProperties(DynamicPropertyRegistry registry) {
+        ensureStarted();
         registry.add("spring.datasource.url", COCKROACH::getJdbcUrl);
         registry.add("spring.datasource.username", COCKROACH::getUsername);
         registry.add("spring.datasource.password", COCKROACH::getPassword);

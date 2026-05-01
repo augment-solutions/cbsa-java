@@ -76,13 +76,17 @@ class InqaccServiceTest extends AbstractCockroachIntegrationTest {
     }
 
     @Test
-    void blankAccountTypeBehavesLikeNotFound() {
+    void blankAccountTypeStillReturnsAccount() {
+        // COBOL INQACC.cbl does not filter rows by account_type; blank-type
+        // accounts are returned as-is from both exact and last-mode lookups.
         insertAccount(10L, 12345678L, "");
 
         InqaccResult result = inqaccService.inquire(new InqaccRequest(12345678L));
 
-        assertThat(result.inquirySuccess()).isFalse();
-        assertThat(result.failCode()).isEqualTo("1");
+        assertThat(result.inquirySuccess()).isTrue();
+        assertThat(result.failCode()).isEqualTo("0");
+        assertThat(result.account()).isNotNull();
+        assertThat(result.account().accountType()).isEmpty();
     }
 
     private void insertAccount(long customerNumber, long accountNumber, String accountType) {

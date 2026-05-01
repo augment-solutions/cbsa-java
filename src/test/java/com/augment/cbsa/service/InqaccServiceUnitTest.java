@@ -59,7 +59,9 @@ class InqaccServiceUnitTest {
     }
 
     @Test
-    void returnsNotFoundWhenAccountTypeIsBlank() {
+    void returnsBlankAccountTypeAsSuccess() {
+        // COBOL INQACC.cbl does not filter rows by account_type; blank-type
+        // accounts are returned as-is.
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqaccService service = new InqaccService(accountRepository, "987654");
         when(accountRepository.findBySortcodeAndAccountNumber("987654", 12345678L))
@@ -67,8 +69,9 @@ class InqaccServiceUnitTest {
 
         InqaccResult result = service.inquire(new InqaccRequest(12345678L));
 
-        assertThat(result.inquirySuccess()).isFalse();
-        assertThat(result.failCode()).isEqualTo("1");
+        assertThat(result.inquirySuccess()).isTrue();
+        assertThat(result.failCode()).isEqualTo("0");
+        assertThat(result.account().accountType()).isEqualTo(" ");
     }
 
     @Test

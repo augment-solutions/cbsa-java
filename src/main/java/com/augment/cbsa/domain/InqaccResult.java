@@ -40,4 +40,8 @@ public record InqaccResult(
     public boolean isNotFoundFailure() {
         return !inquirySuccess && "1".equals(failCode);
     }
+
+    public boolean isRandomRetryExhaustedFailure() {
+        return !inquirySuccess && "R".equals(failCode);
+    }
 }

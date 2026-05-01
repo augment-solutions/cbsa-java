@@ -44,15 +44,40 @@ public class InqaccController {
         InqaccRequestDto requestDto = new InqaccRequestDto(accountNumber);
         InqaccResult result = inqaccService.inquire(new InqaccRequest(requestDto.accountNumber()));
 
-        if (result.isNotFoundFailure()) {
-            ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-            problemDetail.setTitle("Account not found");
-            problemDetail.setDetail(result.message());
-            problemDetail.setProperty("failCode", result.failCode());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+        if (!result.inquirySuccess()) {
+            return ResponseEntity.status(failureStatus(result)).body(failureBody(result));
         }
 
         return ResponseEntity.ok(toResponse(result));
+    }
+
+    private HttpStatus failureStatus(InqaccResult result) {
+        if (result.isNotFoundFailure()) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (result.isRandomRetryExhaustedFailure()) {
+            return HttpStatus.SERVICE_UNAVAILABLE;
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private ProblemDetail failureBody(InqaccResult result) {
+        HttpStatus status = failureStatus(result);
+        ProblemDetail problemDetail = ProblemDetail.forStatus(status);
+        problemDetail.setTitle(failureTitle(result));
+        problemDetail.setDetail(result.message());
+        problemDetail.setProperty("failCode", result.failCode());
+        return problemDetail;
+    }
+
+    private String failureTitle(InqaccResult result) {
+        if (result.isNotFoundFailure()) {
+            return "Account not found";
+        }
+        if (result.isRandomRetryExhaustedFailure()) {
+            return "Account lookup retry exhausted";
+        }
+        return "Account inquiry failed";
     }
 
     private InqaccResponseDto toResponse(InqaccResult result) {

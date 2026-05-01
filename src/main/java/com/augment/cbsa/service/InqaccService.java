@@ -1,6 +1,5 @@
 package com.augment.cbsa.service;
 
-import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.InqaccRequest;
 import com.augment.cbsa.domain.InqaccResult;
 import com.augment.cbsa.error.CbsaAbendException;
@@ -34,8 +33,10 @@ public class InqaccService {
 
         try {
             if (accountNumber == LAST_ACCOUNT_NUMBER) {
+                // Mirror COBOL GET-LAST-ACCOUNT-DB2: ORDER BY ACCOUNT_NUMBER DESC
+                // FETCH FIRST 1 ROWS ONLY. The COBOL does not filter on account_type,
+                // so a blank/unusable highest-numbered account still wins.
                 return accountRepository.findLastBySortcode(sortcode)
-                        .filter(this::isUsableAccount)
                         .map(InqaccResult::success)
                         .orElseGet(() -> InqaccResult.failure(
                                 NOT_FOUND_CODE,
@@ -45,7 +46,6 @@ public class InqaccService {
             }
 
             return accountRepository.findBySortcodeAndAccountNumber(sortcode, accountNumber)
-                    .filter(this::isUsableAccount)
                     .map(InqaccResult::success)
                     .orElseGet(() -> InqaccResult.failure(
                             NOT_FOUND_CODE,
@@ -56,9 +56,5 @@ public class InqaccService {
             String abendCode = accountNumber == LAST_ACCOUNT_NUMBER ? LAST_LOOKUP_ABEND_CODE : EXACT_LOOKUP_ABEND_CODE;
             throw new CbsaAbendException(abendCode, "INQACC failed to read the account data.", exception);
         }
-    }
-
-    private boolean isUsableAccount(AccountDetails account) {
-        return !account.accountType().isBlank();
     }
 }
