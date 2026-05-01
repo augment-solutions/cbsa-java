@@ -3,10 +3,10 @@ package com.augment.cbsa.web.updcust.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.Objects;
 
 public record UpdcustCommareaRequestDto(
         @JsonProperty("CommEye")
@@ -24,12 +24,12 @@ public record UpdcustCommareaRequestDto(
         String commCustno,
 
         @JsonProperty("CommName")
-        @NotNull
+        @NotBlank
         @Size(max = 60)
         String commName,
 
         @JsonProperty("CommAddress")
-        @NotNull
+        @NotBlank
         @Size(max = 160)
         String commAddress,
 
@@ -59,14 +59,4 @@ public record UpdcustCommareaRequestDto(
         @Size(max = 1)
         String commUpdFailCd
 ) {
-
-    public UpdcustCommareaRequestDto {
-        Objects.requireNonNull(commScode, "commScode must not be null");
-        Objects.requireNonNull(commCustno, "commCustno must not be null");
-        Objects.requireNonNull(commName, "commName must not be null");
-        Objects.requireNonNull(commAddress, "commAddress must not be null");
-        Objects.requireNonNull(commDob, "commDob must not be null");
-        Objects.requireNonNull(commCreditScore, "commCreditScore must not be null");
-        Objects.requireNonNull(commCsReviewDate, "commCsReviewDate must not be null");
-    }
 }

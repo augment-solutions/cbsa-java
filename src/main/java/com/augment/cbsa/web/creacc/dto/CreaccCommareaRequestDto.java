@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
-import java.util.Objects;
 
 public record CreaccCommareaRequestDto(
         @JsonProperty("CommEyecatcher")
@@ -83,14 +82,4 @@ public record CreaccCommareaRequestDto(
         @Size(max = 1)
         String commFailCode
 ) {
-
-    public CreaccCommareaRequestDto {
-        Objects.requireNonNull(commCustno, "commCustno must not be null");
-        Objects.requireNonNull(commKey, "commKey must not be null");
-        Objects.requireNonNull(commAccType, "commAccType must not be null");
-        Objects.requireNonNull(commIntRt, "commIntRt must not be null");
-        Objects.requireNonNull(commOverdrLim, "commOverdrLim must not be null");
-        Objects.requireNonNull(commAvailBal, "commAvailBal must not be null");
-        Objects.requireNonNull(commActBal, "commActBal must not be null");
-    }
 }

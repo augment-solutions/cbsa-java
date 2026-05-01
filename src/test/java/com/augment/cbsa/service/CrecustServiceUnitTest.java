@@ -63,6 +63,15 @@ class CrecustServiceUnitTest {
     }
 
     @Test
+    void rejectsBlankCustomerNamesAtTitleValidation() {
+        CrecustResult result = crecustService.create(new CrecustRequest("   ", "1 Main Street", 1012000));
+
+        assertThat(result.creationSuccess()).isFalse();
+        assertThat(result.failCode()).isEqualTo("T");
+        verifyNoInteractions(creditAgencyService, crecustRepository, reviewDateRandom);
+    }
+
+    @Test
     void rejectsDatesEarlierThan1601() {
         CrecustResult result = crecustService.create(new CrecustRequest("Dr Example", "1 Main Street", 1011500));
 
