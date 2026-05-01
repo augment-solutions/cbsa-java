@@ -34,7 +34,7 @@ public class CrecustService {
             DateTimeFormatter.ofPattern("ddMMuuuu").withResolverStyle(ResolverStyle.STRICT);
     private static final int CREDIT_AGENCY_COUNT = 5;
     private static final int REVIEW_DATE_BOUND = 20;
-    private static final long CREDIT_AGENCY_TIMEOUT_SECONDS = 6;
+    private static final long CREDIT_AGENCY_REPLY_WINDOW_SECONDS = 3;
     private static final List<String> VALID_TITLES = List.of(
             "Professor", "Mr", "Mrs", "Miss", "Ms", "Dr", "Drs", "Lord", "Sir", "Lady", ""
     );
@@ -151,37 +151,53 @@ public class CrecustService {
             futures.add(creditAgencyService.requestCreditScore(request, agencyNumber));
         }
 
+        // Single overall reply window across all agencies, mirroring the COBOL
+        // DELAY FOR SECONDS(3) + FETCH ANY NOSUSPEND flow. Wait for whichever
+        // agencies finish before the deadline and ignore the rest, so one slow
+        // agency cannot starve replies that already completed.
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                    .get(CREDIT_AGENCY_REPLY_WINDOW_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException ignored) {
+            // Some agencies did not reply within the overall window; fall through
+            // and harvest whichever did complete.
+        } catch (ExecutionException | CompletionException ignored) {
+            // Ignore individual credit-agency failures and average only successful replies.
+        } catch (InterruptedException exception) {
+            // Treat interruption as an immediate overall credit-check failure
+            // so we do not persist a customer based on partially collected
+            // scores while cancellation is being signaled.
+            Thread.currentThread().interrupt();
+            for (CompletableFuture<Optional<Integer>> future : futures) {
+                future.cancel(true);
+            }
+            return null;
+        }
+
         int totalScore = 0;
         int returnedScores = 0;
-        boolean interrupted = false;
         for (CompletableFuture<Optional<Integer>> future : futures) {
-            if (interrupted) {
-                future.cancel(true);
+            if (future.isCompletedExceptionally() || future.isCancelled()) {
+                continue;
+            }
+            // cancel(true) returns false if the future already completed
+            // normally, in which case we still harvest its score; this avoids
+            // dropping replies that completed between isDone() and cancel().
+            if (!future.isDone() && future.cancel(true)) {
                 continue;
             }
             try {
-                Optional<Integer> maybeScore = future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                Optional<Integer> maybeScore = future.getNow(Optional.empty());
                 if (maybeScore.isPresent()) {
                     totalScore += maybeScore.get();
                     returnedScores++;
                 }
-            } catch (TimeoutException exception) {
-                // Bound the wait per agency so a hung credit-agency call cannot
-                // block the request indefinitely; treat as fail code G fodder.
-                future.cancel(true);
-            } catch (ExecutionException | CompletionException exception) {
-                // Ignore individual credit-agency failures and average only successful replies.
-            } catch (InterruptedException exception) {
-                // Treat interruption as an immediate overall credit-check failure
-                // so we do not persist a customer based on partially collected
-                // scores while cancellation is being signaled.
-                Thread.currentThread().interrupt();
-                future.cancel(true);
-                interrupted = true;
+            } catch (CompletionException ignored) {
+                // Individual agency failure; average only successful replies.
             }
         }
 
-        if (interrupted || returnedScores == 0) {
+        if (returnedScores == 0) {
             return null;
         }
 
