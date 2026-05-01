@@ -47,6 +47,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
         insertCustomer(10L);
         insertAccount(10L, new BigDecimal("500.00"));
 
+        LocalDate beforeRequest = LocalDate.now(clock);
         mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.PAYDBCR.CommAccno").value("12345678"))
@@ -75,7 +76,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
         assertThat(auditRow.value1()).isEqualTo("PDR");
         assertThat(auditRow.value2()).isEqualTo("ABCDEFGH123456");
         assertThat(auditRow.value3()).isEqualTo(new BigDecimal("-25.00"));
-        assertThat(auditRow.value4()).isEqualTo(LocalDate.now(clock));
+        assertThat(auditRow.value4()).isIn(beforeRequest, beforeRequest.plusDays(1));
     }
 
     @Test
