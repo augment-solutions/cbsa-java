@@ -5,6 +5,7 @@ import com.augment.cbsa.domain.CreaccCommand;
 import com.augment.cbsa.domain.CreaccResult;
 import com.augment.cbsa.error.CbsaAbendException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
@@ -56,6 +57,11 @@ public class CreaccRepository {
                     .forUpdate()
                     .fetchOne();
         } catch (DataAccessException exception) {
+            // Re-throw serialization failures so CrdbRetry can retry the
+            // whole transaction; only abend on non-retryable errors.
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(COUNTER_ABEND_CODE, "CREACC failed to reserve the next account number.", exception);
         }
 
@@ -91,6 +97,9 @@ public class CreaccRepository {
                 throw new CbsaAbendException(COUNTER_ABEND_CODE, "CREACC failed to update the account counter.");
             }
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(COUNTER_ABEND_CODE, "CREACC failed to update the account counter.", exception);
         }
 
@@ -109,6 +118,9 @@ public class CreaccRepository {
                     .set(ACCOUNT.ACTUAL_BALANCE, account.actualBalance())
                     .execute();
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw rollbackFailure("7", "Unable to create the account record.");
         }
 
@@ -124,10 +136,25 @@ public class CreaccRepository {
                     .set(PROCTRAN.AMOUNT, new BigDecimal("0.00"))
                     .execute();
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw new CbsaAbendException(PROCTRAN_ABEND_CODE, "CREACC failed to write the audit trail.", exception);
         }
 
         return CreaccResult.success(account);
+    }
+
+    private static boolean isSerializationFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SQLException sqlException
+                    && "40001".equals(sqlException.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private long safeIncrement(long currentValue) {
