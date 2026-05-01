@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,7 +47,7 @@ class DbcrfunControllerWebMvcTest {
                 new BigDecimal("525.00")
         )));
 
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(requestJson("25.00", 496)))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("25.00", 496)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.PAYDBCR.CommAccno").value("12345678"))
                 .andExpect(jsonPath("$.PAYDBCR.mSortC").value(987654))
@@ -62,7 +62,7 @@ class DbcrfunControllerWebMvcTest {
         when(dbcrfunService.process(request(new BigDecimal("25.00"), 496)))
                 .thenReturn(DbcrfunResult.failure("1", "Account number 12345678 was not found."));
 
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(requestJson("25.00", 496)))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("25.00", 496)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Account not found"))
                 .andExpect(jsonPath("$.failCode").value("1"));
@@ -73,7 +73,7 @@ class DbcrfunControllerWebMvcTest {
         when(dbcrfunService.process(request(new BigDecimal("-25.00"), 496)))
                 .thenReturn(DbcrfunResult.failure("3", "Account number 12345678 does not have sufficient available funds."));
 
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Insufficient funds"))
                 .andExpect(jsonPath("$.failCode").value("3"));
@@ -81,7 +81,7 @@ class DbcrfunControllerWebMvcTest {
 
     @Test
     void requestValidationFailuresRemainProblemDetails() throws Exception {
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(missingAmountJson()))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(missingAmountJson()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"));
     }

@@ -3,6 +3,7 @@ package com.augment.cbsa.web.dbcrfun.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record DbcrfunOriginDto(
@@ -23,6 +24,7 @@ public record DbcrfunOriginDto(
         String commNetwrkId,
 
         @JsonProperty("CommFaciltype")
+        @NotNull
         @Min(-99_999_999)
         @Max(99_999_999)
         Integer commFaciltype,

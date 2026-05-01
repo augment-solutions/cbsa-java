@@ -18,7 +18,7 @@ import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,7 +47,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
         insertCustomer(10L);
         insertAccount(10L, new BigDecimal("500.00"));
 
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.PAYDBCR.CommAccno").value("12345678"))
                 .andExpect(jsonPath("$.PAYDBCR.mSortC").value(987654))
@@ -83,7 +83,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
         insertCustomer(10L);
         insertAccount(10L, new BigDecimal("10.00"));
 
-        mockMvc.perform(put("/api/v1/makepayment/dbcr").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
+        mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Insufficient funds"))
                 .andExpect(jsonPath("$.failCode").value("3"));

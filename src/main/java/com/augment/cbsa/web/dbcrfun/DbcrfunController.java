@@ -16,14 +16,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Validated
-@RequestMapping("/api/v1/makepayment")
+@RequestMapping("/api/v1/dbcrfun")
 public class DbcrfunController {
 
     private final DbcrfunService dbcrfunService;
@@ -32,8 +32,8 @@ public class DbcrfunController {
         this.dbcrfunService = Objects.requireNonNull(dbcrfunService, "dbcrfunService must not be null");
     }
 
-    @PutMapping("/dbcr")
-    public ResponseEntity<?> putPayment(@Valid @RequestBody DbcrfunRequestDto requestDto) {
+    @PostMapping
+    public ResponseEntity<?> postPayment(@Valid @RequestBody DbcrfunRequestDto requestDto) {
         DbcrfunCommareaRequestDto commarea = requestDto.paydbcr();
         DbcrfunRequest request = new DbcrfunRequest(
                 Long.parseLong(commarea.commAccno()),

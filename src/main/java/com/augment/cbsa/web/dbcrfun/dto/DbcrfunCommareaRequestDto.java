@@ -44,6 +44,7 @@ public record DbcrfunCommareaRequestDto(
 
         @JsonProperty("CommOrigin")
         @Valid
+        @NotNull
         DbcrfunOriginDto commOrigin,
 
         @JsonProperty("CommSuccess")
