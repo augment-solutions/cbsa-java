@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      COCKROACH_URL: jdbc:postgresql://localhost:26257/cbsa?sslmode=disable
+      CBSA_TESTS_USE_LOCAL_COCKROACH: "true"
+      COCKROACH_URL: jdbc:postgresql://localhost:26257/cbsa_test?sslmode=disable
       COCKROACH_USER: root
       COCKROACH_PASSWORD: ""
     steps:
@@ -54,7 +55,7 @@ jobs:
             sleep 1
           done
           cockroach sql --insecure --host=localhost:26257 \
-            -e "CREATE DATABASE IF NOT EXISTS cbsa"
+            -e "CREATE DATABASE IF NOT EXISTS cbsa_test"
 
       - name: Build and verify
         run: ./mvnw -B -ntp verify
