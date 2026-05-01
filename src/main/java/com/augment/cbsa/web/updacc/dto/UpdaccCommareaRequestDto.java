@@ -3,6 +3,7 @@ package com.augment.cbsa.web.updacc.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -36,6 +37,7 @@ public record UpdaccCommareaRequestDto(
 
         @JsonProperty("CommIntRate")
         @NotNull
+        @Digits(integer = 4, fraction = 2)
         @DecimalMin("0.00")
         @DecimalMax("9999.99")
         BigDecimal commIntRate,
@@ -62,11 +64,13 @@ public record UpdaccCommareaRequestDto(
         Integer commNextStmtDt,
 
         @JsonProperty("CommAvailBal")
+        @Digits(integer = 10, fraction = 2)
         @DecimalMin("-9999999999.99")
         @DecimalMax("9999999999.99")
         BigDecimal commAvailBal,
 
         @JsonProperty("CommActualBal")
+        @Digits(integer = 10, fraction = 2)
         @DecimalMin("-9999999999.99")
         @DecimalMax("9999999999.99")
         BigDecimal commActualBal,

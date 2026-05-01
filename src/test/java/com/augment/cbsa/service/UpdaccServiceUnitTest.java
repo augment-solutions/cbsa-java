@@ -57,21 +57,25 @@ class UpdaccServiceUnitTest {
         UpdaccRepository repository = mock(UpdaccRepository.class);
         UpdaccService service = new UpdaccService(repository, "987654");
         UpdaccRequest request = new UpdaccRequest(12345678L, "BROKER", new BigDecimal("2.25"), 500L);
-        when(repository.updateAccount("987654", request)).thenReturn(UpdaccResult.success(account()));
+        when(repository.updateAccount("987654", request)).thenReturn(UpdaccResult.success(account("BROKER")));
 
         UpdaccResult result = service.update(request);
 
         assertThat(result.updateSuccess()).isTrue();
         assertThat(result.account()).isNotNull();
-        assertThat(result.account().accountType()).isEqualTo("ISA");
+        assertThat(result.account().accountType()).isEqualTo("BROKER");
     }
 
     private AccountDetails account() {
+        return account("ISA");
+    }
+
+    private AccountDetails account(String accountType) {
         return new AccountDetails(
                 "987654",
                 10L,
                 12345678L,
-                "ISA",
+                accountType,
                 new BigDecimal("2.25"),
                 LocalDate.of(2024, 1, 2),
                 new BigDecimal("500.00"),
