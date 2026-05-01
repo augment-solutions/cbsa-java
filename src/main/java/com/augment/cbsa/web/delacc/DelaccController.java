@@ -1,9 +1,11 @@
 package com.augment.cbsa.web.delacc;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.DelaccRequest;
 import com.augment.cbsa.domain.DelaccResult;
 import com.augment.cbsa.service.DelaccService;
+import com.augment.cbsa.web.delacc.dto.DelaccCommareaRequestDto;
 import com.augment.cbsa.web.delacc.dto.DelaccCommareaResponseDto;
 import com.augment.cbsa.web.delacc.dto.DelaccRequestDto;
 import com.augment.cbsa.web.delacc.dto.DelaccResponseDto;
@@ -33,9 +35,11 @@ public class DelaccController {
     private static final DateTimeFormatter COBOL_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy", Locale.ROOT);
 
     private final DelaccService delaccService;
+    private final CbsaProperties cbsaProperties;
 
-    public DelaccController(DelaccService delaccService) {
+    public DelaccController(DelaccService delaccService, CbsaProperties cbsaProperties) {
         this.delaccService = Objects.requireNonNull(delaccService, "delaccService must not be null");
+        this.cbsaProperties = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null");
     }
 
     @DeleteMapping("/remove/{accno}")
@@ -48,12 +52,41 @@ public class DelaccController {
     ) {
         Objects.requireNonNull(requestDto, "requestDto must not be null");
 
+        // The body's DelAccAccno and DelAccScode are optional (patterns allow ""
+        // / null). When present they must agree with the path account number
+        // and the configured branch sortcode so a misaddressed request can
+        // never silently delete the path target.
+        ProblemDetail mismatch = validateBodyAgainstPath(requestDto.delAcc(), accountNumber);
+        if (mismatch != null) {
+            return ResponseEntity.badRequest().body(mismatch);
+        }
+
         DelaccResult result = delaccService.delete(new DelaccRequest(accountNumber));
         if (!result.deleteSuccess()) {
             return ResponseEntity.status(failureStatus(result)).body(failureBody(result));
         }
 
         return ResponseEntity.ok(toResponse(result));
+    }
+
+    private ProblemDetail validateBodyAgainstPath(DelaccCommareaRequestDto delAcc, long pathAccountNumber) {
+        Long bodyAccno = delAcc.delAccAccno();
+        if (bodyAccno != null && bodyAccno != pathAccountNumber) {
+            return mismatch("Body DelAccAccno does not match path accno.");
+        }
+        String bodyScode = delAcc.delAccScode();
+        if (bodyScode != null && !bodyScode.isEmpty()
+                && !bodyScode.equals(cbsaProperties.sortcode())) {
+            return mismatch("Body DelAccScode does not match the configured branch sortcode.");
+        }
+        return null;
+    }
+
+    private ProblemDetail mismatch(String detail) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle("Validation failed");
+        problemDetail.setDetail(detail);
+        return problemDetail;
     }
 
     private HttpStatus failureStatus(DelaccResult result) {
