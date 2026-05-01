@@ -85,18 +85,27 @@ class DelcusServiceUnitTest {
     }
 
     @Test
+    void rejectsZeroCustomerNumberWithoutInvokingTheRandomCustomerPath() {
+        DelcusResult result = delcusService.delete(new DelcusRequest(0L));
+
+        assertThat(result.deleteSuccess()).isFalse();
+        assertThat(result.failCode()).isEqualTo("1");
+        verifyNoInteractions(inqcustService, inqacccuService, delcusRepository);
+    }
+
+    @Test
     void deletesResolvedCustomerAndSkipsAccountAuditWhenTheRowIsAlreadyGone() {
         CustomerDetails customer = customer(42L);
         AccountDetails firstAccount = account(42L, 100L, "ISA", new BigDecimal("1499.75"));
         AccountDetails secondAccount = account(42L, 200L, "SAVINGS", new BigDecimal("500.00"));
 
-        when(inqcustService.inquire(new InqcustRequest(0L))).thenReturn(InqcustResult.success(customer));
+        when(inqcustService.inquire(new InqcustRequest(42L))).thenReturn(InqcustResult.success(customer));
         when(inqacccuService.inquire(new InqacccuRequest(42L))).thenReturn(InqacccuResult.success(42L, java.util.List.of(firstAccount, secondAccount)));
         when(delcusRepository.deleteAccount("987654", 100L)).thenReturn(1);
         when(delcusRepository.deleteAccount("987654", 200L)).thenReturn(0);
         when(delcusRepository.deleteCustomer("987654", 42L)).thenReturn(1);
 
-        DelcusResult result = delcusService.delete(new DelcusRequest(0L));
+        DelcusResult result = delcusService.delete(new DelcusRequest(42L));
 
         assertThat(result.deleteSuccess()).isTrue();
         assertThat(result.customer()).isEqualTo(customer);

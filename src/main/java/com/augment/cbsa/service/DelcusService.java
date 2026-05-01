@@ -58,6 +58,14 @@ public class DelcusService {
     public DelcusResult delete(DelcusRequest request) {
         Objects.requireNonNull(request, "request must not be null");
 
+        // INQCUST treats customerNumber=0 as "random customer"; deleting against
+        // that path is unsafe, so reject it explicitly at the service boundary
+        // independent of any controller-level path validation.
+        if (request.customerNumber() <= 0L) {
+            return DelcusResult.failure("1", request.customerNumber(),
+                    "Customer number %d is invalid.".formatted(request.customerNumber()));
+        }
+
         return CrdbRetry.run(dsl, () -> transactionTemplate.execute(status -> deleteWithinTransaction(request)));
     }
 

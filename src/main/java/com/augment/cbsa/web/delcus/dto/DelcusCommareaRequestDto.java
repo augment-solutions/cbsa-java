@@ -15,6 +15,10 @@ public record DelcusCommareaRequestDto(
         @Pattern(regexp = "[0-9]{0,6}")
         String commScode,
 
+        @JsonProperty("CommCustno")
+        @Pattern(regexp = "[0-9]{0,10}")
+        String commCustno,
+
         @JsonProperty("CommName")
         @Size(max = 60)
         String commName,
