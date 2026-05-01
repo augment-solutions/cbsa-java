@@ -5,10 +5,12 @@ import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.DbcrfunOrigin;
 import com.augment.cbsa.domain.DbcrfunRequest;
 import com.augment.cbsa.domain.DbcrfunResult;
+import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.CrdbRetry;
 import com.augment.cbsa.repository.DbcrfunRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,6 +28,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class DbcrfunService {
 
     static final int PAYMENT_FACILITY_TYPE = 496;
+    // Distinct code for serialization-retry exhaustion escaping CrdbRetry, so
+    // operationally it is not conflated with a PROCTRAN audit-trail outage.
+    private static final String RETRY_EXHAUSTED_ABEND_CODE = "XRTY";
 
     private final DbcrfunRepository dbcrfunRepository;
     private final DSLContext dsl;
@@ -58,7 +63,19 @@ public class DbcrfunService {
             );
             return Objects.requireNonNull(result, "transactionTemplate returned null result");
         } catch (DataAccessException exception) {
-            return DbcrfunResult.failure("2", "DBCRFUN failed to update the account data.");
+            // Inner persistence steps translate every retryable failure into
+            // either a domain fail code or PROCTRAN_ABEND_CODE; the only path
+            // that escapes CrdbRetry.run is serialization-retry exhaustion.
+            // Anything else is an unexpected DAE and is rethrown so the global
+            // handler can classify it as UNEX.
+            if (isSerializationFailure(exception)) {
+                throw new CbsaAbendException(
+                        RETRY_EXHAUSTED_ABEND_CODE,
+                        "DBCRFUN aborted after exhausting Cockroach serialization retries.",
+                        exception
+                );
+            }
+            throw exception;
         }
     }
 
@@ -148,5 +165,16 @@ public class DbcrfunService {
 
     private BigDecimal scale(BigDecimal value) {
         return value.setScale(2, RoundingMode.HALF_EVEN);
+    }
+
+    private static boolean isSerializationFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SQLException sqlException && "40001".equals(sqlException.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

@@ -68,6 +68,11 @@ public class CrecustRepository {
                     .forUpdate()
                     .fetchOne();
         } catch (DataAccessException exception) {
+            // Re-throw serialization failures so CrdbRetry can retry the
+            // transaction; otherwise translate to a domain fail code.
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw rollbackFailure("3", "Unable to reserve the next customer number.");
         }
 
@@ -113,6 +118,9 @@ public class CrecustRepository {
                     .set(CUSTOMER.CS_REVIEW_DATE, customer.csReviewDate())
                     .execute();
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw rollbackFailure("1", "Unable to create the customer record.");
         }
 
@@ -126,6 +134,9 @@ public class CrecustRepository {
                     .and(CONTROL.CUSTOMER_LAST.eq(baselineLast))
                     .execute();
         } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
             throw rollbackFailure("4", "Unable to update the customer control record.");
         }
         if (controlUpdated != 1) {
