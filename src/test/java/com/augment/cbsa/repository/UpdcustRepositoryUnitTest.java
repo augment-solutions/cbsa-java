@@ -21,12 +21,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
- * Verifies the outer DataAccessException catch in
- * {@link UpdcustRepository#updateCustomer}: serialization-retry exhaustion
- * surfaces as {@code XRTY}, while any other DAE escaping
- * {@code CrdbRetry.run(...)} is re-thrown so the global handler can classify
- * it as {@code UNEX}. PROCTRAN-specific failures are covered separately by
- * the inner catch in the same method.
+ * Unit-level coverage for the <strong>outer</strong> DataAccessException catch
+ * in {@link UpdcustRepository#updateCustomer}: serialization-retry exhaustion
+ * escaping {@code CrdbRetry.run(...)} surfaces as {@code XRTY}, while any other
+ * DAE is re-thrown so the global handler classifies it as {@code UNEX}.
+ *
+ * <p>The <strong>inner</strong> PROCTRAN-insert catch (HWPT wrapping vs SQLSTATE
+ * 40001 rethrow) is intentionally <em>not</em> covered here: it sits inside the
+ * {@code dsl.transactionResult(configuration -> ...)} lambda and is only
+ * reachable after stubbing {@code DSL.using(Configuration)} plus the full
+ * fluent CUSTOMER/PROCTRAN chains, which is best done as integration coverage.
+ * See <a href="https://github.com/augment-solutions/cbsa-java/issues/36">#36</a>
+ * for the production fix (Spring Boot's {@code DefaultExceptionTranslatorExecuteListener}
+ * substitutes Spring DAEs for jOOQ DAEs, so the inner catches do not fire in
+ * production today) and the integration tests that should land alongside it.
  */
 @ExtendWith(MockitoExtension.class)
 class UpdcustRepositoryUnitTest {
