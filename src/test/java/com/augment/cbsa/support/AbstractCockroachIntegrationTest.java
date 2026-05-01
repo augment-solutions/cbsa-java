@@ -7,18 +7,22 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.CockroachContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@Testcontainers
 public abstract class AbstractCockroachIntegrationTest {
 
-    @Container
+    // Singleton container: started once per JVM and shared across every test class
+    // that extends this base. @Testcontainers/@Container restarts the container
+    // between test classes, which leaves Spring's cached @SpringBootTest context
+    // pointing at a dead port whenever a second class is loaded.
     protected static final CockroachContainer COCKROACH =
             new FallbackCockroachContainer(DockerImageName.parse("cockroachdb/cockroach:v24.3.4"));
+
+    static {
+        COCKROACH.start();
+    }
 
     @DynamicPropertySource
     static void registerCockroachProperties(DynamicPropertyRegistry registry) {
