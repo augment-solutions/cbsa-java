@@ -9,9 +9,11 @@ import com.augment.cbsa.repository.DelcusRepository;
 import com.augment.cbsa.repository.CustomerRepository;
 import com.augment.cbsa.repository.UpdaccRepository;
 import com.augment.cbsa.repository.UpdcustRepository;
+import com.augment.cbsa.repository.XfrfunRepository;
 import com.augment.cbsa.service.DelaccService;
 import com.augment.cbsa.service.DbcrfunService;
 import com.augment.cbsa.service.DelcusService;
+import com.augment.cbsa.service.XfrfunService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -60,6 +62,9 @@ class CbsaApplicationTests {
     private DbcrfunRepository dbcrfunRepository;
 
     @MockitoBean
+    private XfrfunRepository xfrfunRepository;
+
+    @MockitoBean
     private DelcusService delcusService;
 
     @MockitoBean
@@ -67,6 +72,9 @@ class CbsaApplicationTests {
 
     @MockitoBean
     private DbcrfunService dbcrfunService;
+
+    @MockitoBean
+    private XfrfunService xfrfunService;
 
     @Test
     void contextLoads() {
