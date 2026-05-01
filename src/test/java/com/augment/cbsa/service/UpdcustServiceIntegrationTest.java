@@ -111,10 +111,12 @@ class UpdcustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
         insertCustomer(1L, "Mr Old Name", "9 Old Street", LocalDate.of(2000, 1, 10), (short) 430, LocalDate.of(2026, 5, 8));
         // The Cockroach container is a singleton shared across every
         // integration test class, so leaking 'proctran_block_inserts' would
-        // poison every later PROCTRAN write. Run the ADD inside the try so
-        // cleanup still fires if the assertion or service call throws, and
-        // use DROP ... IF EXISTS so we also recover from any constraint a
-        // previously-killed JVM may have left behind.
+        // poison every later PROCTRAN write. Drop any leftover constraint
+        // from a previously-killed JVM before we add ours, run the ADD
+        // inside the try so cleanup still fires if the assertion or service
+        // call throws, and use DROP ... IF EXISTS in the finally for the
+        // same reason.
+        dsl.execute("ALTER TABLE proctran DROP CONSTRAINT IF EXISTS proctran_block_inserts");
         try {
             dsl.execute("ALTER TABLE proctran ADD CONSTRAINT proctran_block_inserts CHECK (false) NOT VALID");
             assertThatThrownBy(() -> updcustService.update(new UpdcustRequest(
