@@ -66,9 +66,6 @@ public class CreaccController {
         if (result.isCapacityFailure()) {
             return HttpStatus.CONFLICT;
         }
-        if (result.isTransientFailure()) {
-            return HttpStatus.SERVICE_UNAVAILABLE;
-        }
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 

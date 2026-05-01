@@ -13,7 +13,6 @@ public record CreaccResult(
     private static final Set<String> VALIDATION_FAIL_CODES = Set.of("A");
     private static final Set<String> NOT_FOUND_FAIL_CODES = Set.of("1");
     private static final Set<String> CAPACITY_FAIL_CODES = Set.of("8");
-    private static final Set<String> TRANSIENT_FAIL_CODES = Set.of("3", "5");
 
     public CreaccResult {
         Objects.requireNonNull(failCode, "failCode must not be null");
@@ -50,9 +49,5 @@ public record CreaccResult(
 
     public boolean isCapacityFailure() {
         return !creationSuccess && CAPACITY_FAIL_CODES.contains(failCode);
-    }
-
-    public boolean isTransientFailure() {
-        return !creationSuccess && TRANSIENT_FAIL_CODES.contains(failCode);
     }
 }
