@@ -59,6 +59,10 @@ public class UpdcustService {
     }
 
     private String firstToken(String name) {
+        // Mirror COBOL `UNSTRING COMM-NAME DELIMITED BY SPACE INTO WS-UNSTR-TITLE`
+        // (UPDCUST.cbl): a leading-space name unstrings to all-spaces, which the
+        // COBOL EVALUATE accepts as a valid (blank) title. Do NOT stripLeading
+        // here — that would diverge from UPDCUST's title semantics.
         if (name.isEmpty()) {
             return "";
         }

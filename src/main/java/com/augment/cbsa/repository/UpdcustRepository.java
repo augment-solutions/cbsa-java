@@ -3,6 +3,7 @@ package com.augment.cbsa.repository;
 import com.augment.cbsa.domain.CustomerDetails;
 import com.augment.cbsa.domain.UpdcustRequest;
 import com.augment.cbsa.domain.UpdcustResult;
+import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.jooq.tables.records.CustomerRecord;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -28,6 +29,7 @@ public class UpdcustRepository {
     // requires an audit row. Use OUC (branch update customer) and reuse the
     // existing 40-char customer description layout from OCC/ODC.
     private static final String PROCTRAN_UPDATE_CUSTOMER_TYPE = "OUC";
+    private static final String ABEND_CODE = "HWPT";
 
     private final DSLContext dsl;
 
@@ -58,6 +60,8 @@ public class UpdcustRepository {
             )));
         } catch (RollbackFailureException exception) {
             return exception.result();
+        } catch (DataAccessException exception) {
+            throw new CbsaAbendException(ABEND_CODE, "UPDCUST failed to persist the customer data.", exception);
         }
     }
 
