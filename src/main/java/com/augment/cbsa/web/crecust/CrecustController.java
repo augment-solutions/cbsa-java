@@ -11,6 +11,7 @@ import com.augment.cbsa.web.crecust.dto.CrecustResponseDto;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -27,7 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class CrecustController {
 
     private static final String EYE_CATCHER = "CUST";
-    private static final DateTimeFormatter COBOL_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private static final DateTimeFormatter COBOL_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("ddMMyyyy", Locale.ROOT);
 
     private final CrecustService crecustService;
 

@@ -26,7 +26,8 @@ public class CreaccRepository {
     private static final String COUNTER_ABEND_CODE = "HNCS";
     private static final String PROCTRAN_ABEND_CODE = "HWPT";
     private static final long MAX_ACCOUNT_NUMBER = 99_999_999L;
-    private static final DateTimeFormatter COBOL_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private static final DateTimeFormatter COBOL_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("ddMMyyyy", Locale.ROOT);
 
     private final DSLContext dsl;
 
