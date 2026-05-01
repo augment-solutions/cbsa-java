@@ -97,6 +97,28 @@ class CrecustControllerWebMvcTest {
     }
 
     @Test
+    void missingRequiredFieldReturnsBadRequest() throws Exception {
+        // CommName omitted entirely; bean validation must reject with 400 rather
+        // than letting a constructor NPE escalate to a 500 abend.
+        mockMvc.perform(post("/api/v1/crecust/insert")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {"CreCust":{"CommKey":{"CommSortcode":"000000","CommNumber":0},"CommAddress":"1 Main Street","CommDateOfBirth":10012000}}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"));
+    }
+
+    @Test
+    void blankCommNameReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/crecust/insert")
+                        .contentType(APPLICATION_JSON)
+                        .content(requestJson("   ", "1 Main Street", 10_01_2000)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"));
+    }
+
+    @Test
     void redactsAbendExceptionMessageFromResponseBody() throws Exception {
         when(crecustService.create(new CrecustRequest("Dr Alice Example", "1 Main Street", 10_01_2000)))
                 .thenThrow(new CbsaAbendException("HWPT", "sensitive audit failure"));

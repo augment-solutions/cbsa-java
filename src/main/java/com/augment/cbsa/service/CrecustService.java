@@ -37,7 +37,7 @@ public class CrecustService {
     private static final int REVIEW_DATE_BOUND = 20;
     private static final long CREDIT_AGENCY_REPLY_WINDOW_SECONDS = 3;
     private static final List<String> VALID_TITLES = List.of(
-            "Professor", "Mr", "Mrs", "Miss", "Ms", "Dr", "Drs", "Lord", "Sir", "Lady", ""
+            "Professor", "Mr", "Mrs", "Miss", "Ms", "Dr", "Drs", "Lord", "Sir", "Lady"
     );
 
     private final CrecustRepository crecustRepository;

@@ -110,6 +110,15 @@ Never persist both forms.
   of the commarea (e.g. `INQCUST-CUSTNO` → `customerNumber`).
 - Validation via `jakarta.validation` annotations; constraint violations
   yield HTTP 400 from the `@ControllerAdvice`.
+- Required fields on request-DTO records are expressed exclusively through
+  `@NotNull` (and `@NotBlank` for non-blank strings such as customer
+  name/address) on the record components, with `@Valid` on the controller
+  parameter and on every nested DTO/Key reference. Do **not** put
+  `Objects.requireNonNull(...)` checks inside the canonical constructor of
+  a request DTO: those throw `NullPointerException` during Jackson
+  deserialization, bypass `MethodArgumentNotValidException`, and surface
+  as a 500 (`UNEX`) instead of the intended 400. Issues #10 and #15 are
+  the empirical source for this rule.
 - A "not found" commarea result (e.g. `INQCUST-INQ-FAIL-CD = '1'`) maps to
   HTTP 404 with a `{ failCode, message }` body, **not** an exception.
 - Hard failures (commarea-style abend) map to HTTP 500 with a structured

@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.util.Objects;
 
 public record CreaccKeyDto(
         @JsonProperty("CommSortcode")
@@ -19,9 +18,4 @@ public record CreaccKeyDto(
         @Max(99_999_999)
         Long commNumber
 ) {
-
-    public CreaccKeyDto {
-        Objects.requireNonNull(commSortcode, "commSortcode must not be null");
-        Objects.requireNonNull(commNumber, "commNumber must not be null");
-    }
 }
