@@ -49,7 +49,42 @@ class CrdtagyControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.CreCust.CommEyecatcher").value("CUST"))
                 .andExpect(jsonPath("$.CreCust.CommKey.CommSortcode").value("987654"))
-                .andExpect(jsonPath("$.CreCust.CommCreditScore").value(450 + agencyNumber));
+                .andExpect(jsonPath("$.CreCust.CommCreditScore").value(450 + agencyNumber))
+                .andExpect(jsonPath("$.CreCust.CommSuccess").value("Y"))
+                .andExpect(jsonPath("$.CreCust.CommFailCode").value("0"));
+    }
+
+    @Test
+    void overridesPlaceholderSuccessFlagsFromRequest() throws Exception {
+        when(creditAgencyService.requestCreditScore(eq(REQUEST), eq(1)))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(425)));
+
+        // Even when the caller sends garbage placeholders for CommSuccess /
+        // CommFailCode, the controller must emit the terminal Y / 0 pair on
+        // the success path.
+        String body = """
+                {
+                  "CreCust": {
+                    "CommEyecatcher": "CUST",
+                    "CommKey": {"CommSortcode": "987654", "CommNumber": 42},
+                    "CommName": "Dr Alice Example",
+                    "CommAddress": "1 Main Street",
+                    "CommDateOfBirth": 10012000,
+                    "CommCreditScore": 0,
+                    "CommCsReviewDate": 0,
+                    "CommSuccess": "N",
+                    "CommFailCode": "X"
+                  }
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/crdtagy/{agencyNumber}", 1)
+                        .contentType(APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.CreCust.CommSuccess").value("Y"))
+                .andExpect(jsonPath("$.CreCust.CommFailCode").value("0"))
+                .andExpect(jsonPath("$.CreCust.CommCreditScore").value(425));
     }
 
     @Test

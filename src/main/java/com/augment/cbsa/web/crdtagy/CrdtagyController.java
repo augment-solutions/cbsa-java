@@ -47,6 +47,14 @@ public class CrdtagyController {
                 commarea.commDateOfBirth()
         ), agencyNumber);
 
+        // Mirror the convention used by the other Java endpoint controllers
+        // (e.g. DBCRFUN, DELACC): on the success path we set CommSuccess="Y"
+        // and CommFailCode="0" rather than echoing whatever placeholder the
+        // caller sent, so the HTTP response carries terminal indicators that
+        // line up with the populated CommCreditScore. CRDTAGY1 itself never
+        // touches these flags in COBOL — the parent CRECUST orchestrator
+        // does — but at the Java endpoint level they are the natural
+        // success/fail flag for the per-agency call.
         return new CrecustResponseDto(new CrecustCommareaResponseDto(
                 defaultString(commarea.commEyecatcher()),
                 commarea.commKey(),
@@ -55,8 +63,8 @@ public class CrdtagyController {
                 commarea.commDateOfBirth(),
                 creditScore,
                 defaultInt(commarea.commCsReviewDate()),
-                defaultString(commarea.commSuccess()),
-                defaultString(commarea.commFailCode())
+                "Y",
+                "0"
         ));
     }
 
