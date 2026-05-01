@@ -55,7 +55,7 @@ class InqcustControllerTest extends AbstractCockroachIntegrationTest {
         mockMvc.perform(get("/api/v1/inqcust/1234567890"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.failCode").value("1"))
-                .andExpect(jsonPath("$.message").value("Customer number 1234567890 was not found."));
+                .andExpect(jsonPath("$.detail").value("Customer number 1234567890 was not found."));
     }
 
     @Test
@@ -63,12 +63,12 @@ class InqcustControllerTest extends AbstractCockroachIntegrationTest {
         mockMvc.perform(get("/api/v1/inqcust/0"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.failCode").value("1"))
-                .andExpect(jsonPath("$.message").value("No customers exist."));
+                .andExpect(jsonPath("$.detail").value("No customers exist."));
 
         mockMvc.perform(get("/api/v1/inqcust/9999999999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.failCode").value("1"))
-                .andExpect(jsonPath("$.message").value("No customers exist."));
+                .andExpect(jsonPath("$.detail").value("No customers exist."));
     }
 
     @Test
