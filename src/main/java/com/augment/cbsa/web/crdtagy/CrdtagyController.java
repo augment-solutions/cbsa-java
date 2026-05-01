@@ -47,14 +47,14 @@ public class CrdtagyController {
                 commarea.commDateOfBirth()
         ), agencyNumber);
 
-        // Mirror the convention used by the other Java endpoint controllers
-        // (e.g. DBCRFUN, DELACC): on the success path we set CommSuccess="Y"
-        // and CommFailCode="0" rather than echoing whatever placeholder the
-        // caller sent, so the HTTP response carries terminal indicators that
-        // line up with the populated CommCreditScore. CRDTAGY1 itself never
-        // touches these flags in COBOL — the parent CRECUST orchestrator
-        // does — but at the Java endpoint level they are the natural
-        // success/fail flag for the per-agency call.
+        // Mirror the convention used by DbcrfunController: on the success
+        // path we set CommSuccess="Y" and CommFailCode="0" rather than
+        // echoing whatever placeholder the caller sent, so the HTTP response
+        // carries terminal indicators that line up with the populated
+        // CommCreditScore. CRDTAGY1 itself never touches these flags in
+        // COBOL — the parent CRECUST orchestrator does — but at the Java
+        // endpoint level they are the natural success/fail flag for the
+        // per-agency call.
         return new CrecustResponseDto(new CrecustCommareaResponseDto(
                 defaultString(commarea.commEyecatcher()),
                 commarea.commKey(),
@@ -72,7 +72,16 @@ public class CrdtagyController {
         CompletableFuture<java.util.Optional<Integer>> future =
                 creditAgencyService.requestCreditScore(request, agencyNumber);
         try {
-            return future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS).orElse(0);
+            // CreditAgencyService always returns Optional.of(score) on a
+            // normal completion (score range is enforced 1..998 there);
+            // Optional.empty() is therefore not currently reachable. Refuse
+            // it explicitly so a future regression cannot silently emit
+            // CommCreditScore=0 alongside the new CommSuccess="Y" / "0"
+            // terminal indicators.
+            return future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .orElseThrow(() -> new CbsaAbendException(
+                            "PLOP",
+                            "Credit agency returned no score."));
         } catch (TimeoutException exception) {
             future.cancel(true);
             throw new CbsaAbendException("PLOP", "Credit agency processing timed out.", exception);

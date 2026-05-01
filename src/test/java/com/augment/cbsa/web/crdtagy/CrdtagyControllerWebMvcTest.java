@@ -108,6 +108,22 @@ class CrdtagyControllerWebMvcTest {
     }
 
     @Test
+    void emptyOptionalScoreSurfacesAsPlopAbend() throws Exception {
+        // Defensive contract: CreditAgencyService currently always returns
+        // Optional.of(score), but if a future change ever returns empty we
+        // must abend rather than emit CommCreditScore=0 alongside the
+        // CommSuccess="Y" terminal indicator.
+        when(creditAgencyService.requestCreditScore(eq(REQUEST), eq(1)))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
+
+        mockMvc.perform(post("/api/v1/crdtagy/{agencyNumber}", 1)
+                        .contentType(APPLICATION_JSON)
+                        .content(requestJson()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.abendCode").value("PLOP"));
+    }
+
+    @Test
     void redactsAbendExceptionMessageFromAsyncFailures() throws Exception {
         when(creditAgencyService.requestCreditScore(eq(REQUEST), eq(3)))
                 .thenReturn(CompletableFuture.failedFuture(new CbsaAbendException("PLOP", "sensitive delay failure")));
