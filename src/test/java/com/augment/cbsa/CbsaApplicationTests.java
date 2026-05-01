@@ -3,9 +3,11 @@ package com.augment.cbsa;
 import com.augment.cbsa.repository.AccountRepository;
 import com.augment.cbsa.repository.CreaccRepository;
 import com.augment.cbsa.repository.CrecustRepository;
+import com.augment.cbsa.repository.DelcusRepository;
 import com.augment.cbsa.repository.CustomerRepository;
 import com.augment.cbsa.repository.UpdaccRepository;
 import com.augment.cbsa.repository.UpdcustRepository;
+import com.augment.cbsa.service.DelcusService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -43,6 +45,12 @@ class CbsaApplicationTests {
 
     @MockitoBean
     private UpdaccRepository updaccRepository;
+
+    @MockitoBean
+    private DelcusRepository delcusRepository;
+
+    @MockitoBean
+    private DelcusService delcusService;
 
     @Test
     void contextLoads() {
