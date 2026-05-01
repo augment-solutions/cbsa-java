@@ -179,8 +179,8 @@ public class CrecustRepository {
 
     private String toDescription(CustomerDetails customer) {
         return customer.sortcode()
-                + String.format("%010d", customer.customerNumber())
-                + String.format("%-14.14s", customer.name())
+                + String.format(Locale.ROOT, "%010d", customer.customerNumber())
+                + String.format(Locale.ROOT, "%-14.14s", customer.name())
                 + customer.dateOfBirth().format(PROCTRAN_DOB_FORMATTER);
     }
 

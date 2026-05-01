@@ -114,7 +114,7 @@ public class CrecustService {
     }
 
     private Optional<LocalDate> parseDateOfBirth(int cobolDate) {
-        String normalized = String.format("%08d", cobolDate);
+        String normalized = String.format(Locale.ROOT, "%08d", cobolDate);
         try {
             return Optional.of(LocalDate.parse(normalized, COBOL_DATE_FORMATTER));
         } catch (DateTimeParseException exception) {
