@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class InqcustService {
 
     private static final String ABEND_CODE = "CVR1";
-    private static final String BACKEND_FAILURE_CODE = "9";
+    private static final String NO_CUSTOMERS_EXIST_MESSAGE = "No customers exist.";
     private static final String NOT_FOUND_CODE = "1";
     private static final String RANDOM_RETRY_EXHAUSTED_CODE = "R";
     private static final long RANDOM_CUSTOMER_NUMBER = 0L;
@@ -50,9 +50,9 @@ public class InqcustService {
                 return customerRepository.findLastBySortcode(sortcode)
                         .map(InqcustResult::success)
                         .orElseGet(() -> InqcustResult.failure(
-                                BACKEND_FAILURE_CODE,
+                                NOT_FOUND_CODE,
                                 customerNumber,
-                                "Unable to determine the last customer."
+                                NO_CUSTOMERS_EXIST_MESSAGE
                         ));
             }
 
@@ -71,7 +71,7 @@ public class InqcustService {
     private InqcustResult findRandomCustomer() {
         Optional<CustomerDetails> lastCustomer = customerRepository.findLastBySortcode(sortcode);
         if (lastCustomer.isEmpty() || lastCustomer.get().customerNumber() < 1) {
-            return InqcustResult.failure(BACKEND_FAILURE_CODE, RANDOM_CUSTOMER_NUMBER, "Unable to determine a random customer.");
+            return InqcustResult.failure(NOT_FOUND_CODE, RANDOM_CUSTOMER_NUMBER, NO_CUSTOMERS_EXIST_MESSAGE);
         }
 
         long highestCustomerNumber = lastCustomer.get().customerNumber();

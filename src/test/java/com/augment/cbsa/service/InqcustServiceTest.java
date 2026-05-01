@@ -12,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static com.augment.cbsa.jooq.Tables.ACCOUNT;
-import static com.augment.cbsa.jooq.Tables.CONTROL;
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +34,6 @@ class InqcustServiceTest extends AbstractCockroachIntegrationTest {
         dsl.deleteFrom(ACCOUNT).execute();
         dsl.deleteFrom(PROCTRAN).execute();
         dsl.deleteFrom(CUSTOMER).execute();
-        dsl.deleteFrom(CONTROL).execute();
     }
 
     @Test
@@ -75,6 +73,24 @@ class InqcustServiceTest extends AbstractCockroachIntegrationTest {
         assertThat(result.inquirySuccess()).isTrue();
         assertThat(result.customer()).isNotNull();
         assertThat(result.customer().customerNumber()).isEqualTo(25L);
+    }
+
+    @Test
+    void randomCustomerModeReturnsNotFoundWhenNoCustomersExist() {
+        InqcustResult result = inqcustService.inquire(new InqcustRequest(0L));
+
+        assertThat(result.inquirySuccess()).isFalse();
+        assertThat(result.failCode()).isEqualTo("1");
+        assertThat(result.message()).isEqualTo("No customers exist.");
+    }
+
+    @Test
+    void lastCustomerModeReturnsNotFoundWhenNoCustomersExist() {
+        InqcustResult result = inqcustService.inquire(new InqcustRequest(9_999_999_999L));
+
+        assertThat(result.inquirySuccess()).isFalse();
+        assertThat(result.failCode()).isEqualTo("1");
+        assertThat(result.message()).isEqualTo("No customers exist.");
     }
 
     private void insertCustomer(long customerNumber, String name, String address, LocalDate dateOfBirth, short creditScore, LocalDate csReviewDate) {

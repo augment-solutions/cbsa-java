@@ -11,7 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static com.augment.cbsa.jooq.Tables.ACCOUNT;
-import static com.augment.cbsa.jooq.Tables.CONTROL;
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -33,7 +32,6 @@ class InqcustControllerTest extends AbstractCockroachIntegrationTest {
         dsl.deleteFrom(ACCOUNT).execute();
         dsl.deleteFrom(PROCTRAN).execute();
         dsl.deleteFrom(CUSTOMER).execute();
-        dsl.deleteFrom(CONTROL).execute();
     }
 
     @Test
@@ -58,6 +56,19 @@ class InqcustControllerTest extends AbstractCockroachIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.failCode").value("1"))
                 .andExpect(jsonPath("$.message").value("Customer number 1234567890 was not found."));
+    }
+
+    @Test
+    void returnsNotFoundResponseWhenNoCustomersExistForSpecialLookupModes() throws Exception {
+        mockMvc.perform(get("/api/v1/inqcust/0"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.failCode").value("1"))
+                .andExpect(jsonPath("$.message").value("No customers exist."));
+
+        mockMvc.perform(get("/api/v1/inqcust/9999999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.failCode").value("1"))
+                .andExpect(jsonPath("$.message").value("No customers exist."));
     }
 
     @Test
