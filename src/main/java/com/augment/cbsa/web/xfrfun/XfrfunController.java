@@ -35,11 +35,12 @@ public class XfrfunController {
     @PostMapping
     public ResponseEntity<?> transfer(@Valid @RequestBody XfrfunRequestDto requestDto) {
         XfrfunCommareaRequestDto commarea = requestDto.xfrfun();
-        XfrfunResult result = xfrfunService.transfer(new XfrfunRequest(
+        XfrfunRequest serviceRequest = new XfrfunRequest(
                 commarea.commFaccno(),
                 commarea.commTaccno(),
                 commarea.commAmt()
-        ));
+        );
+        XfrfunResult result = xfrfunService.transfer(serviceRequest);
 
         if (!result.transferSuccess()) {
             return ResponseEntity.status(failureStatus(result)).body(failureBody(result));
@@ -50,7 +51,7 @@ public class XfrfunController {
                 Integer.parseInt(sortcode),
                 commarea.commTaccno(),
                 Integer.parseInt(sortcode),
-                commarea.commAmt(),
+                serviceRequest.amount(),
                 result.fromAvailableBalance(),
                 result.fromActualBalance(),
                 result.toAvailableBalance(),

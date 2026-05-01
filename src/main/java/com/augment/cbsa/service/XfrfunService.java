@@ -33,6 +33,7 @@ public class XfrfunService {
     private static final String FROM_ACCOUNT_ABEND_CODE = "FROM";
     private static final String TO_ACCOUNT_ABEND_CODE = "TO  ";
     private static final String PROCTRAN_ABEND_CODE = "WPCD";
+    private static final String RETRY_EXHAUSTED_ABEND_CODE = "XRTY";
 
     private final XfrfunRepository xfrfunRepository;
     private final DSLContext dsl;
@@ -66,10 +67,21 @@ public class XfrfunService {
         }
 
         Instant now = Instant.now(clock);
-        return Objects.requireNonNull(
-                CrdbRetry.run(dsl, () -> transactionTemplate.execute(status -> transferWithinTransaction(request, now))),
-                "transactionTemplate returned null result"
-        );
+        try {
+            return Objects.requireNonNull(
+                    CrdbRetry.run(dsl, () -> transactionTemplate.execute(status -> transferWithinTransaction(request, now))),
+                    "transactionTemplate returned null result"
+            );
+        } catch (DataAccessException exception) {
+            if (isSerializationFailure(exception)) {
+                throw new CbsaAbendException(
+                        RETRY_EXHAUSTED_ABEND_CODE,
+                        "XFRFUN aborted after exhausting Cockroach serialization retries.",
+                        exception
+                );
+            }
+            throw exception;
+        }
     }
 
     private XfrfunResult transferWithinTransaction(XfrfunRequest request, Instant now) {
@@ -119,8 +131,18 @@ public class XfrfunService {
             return OrderedAccounts.success(fromAccount.get(), toAccount.get());
         }
 
+        // fromAccountNumber > toAccountNumber: lock TO first to preserve a consistent
+        // global lock order, but mirror COBOL's failure precedence (FROM-not-found wins
+        // over TO-not-found) by probing the FROM row when the TO row is missing.
         Optional<AccountDetails> toAccount = findAccountForUpdate(TO_ACCOUNT_ABEND_CODE, "TO", request.toAccountNumber());
         if (toAccount.isEmpty()) {
+            Optional<AccountDetails> fromProbe = findAccountForUpdate(FROM_ACCOUNT_ABEND_CODE, "FROM", request.fromAccountNumber());
+            if (fromProbe.isEmpty()) {
+                return OrderedAccounts.failure(XfrfunResult.failure(
+                        FROM_ACCOUNT_NOT_FOUND_CODE,
+                        "From account number %d was not found.".formatted(request.fromAccountNumber())
+                ));
+            }
             return OrderedAccounts.failure(XfrfunResult.failure(
                     TO_ACCOUNT_NOT_FOUND_CODE,
                     "To account number %d was not found.".formatted(request.toAccountNumber())
