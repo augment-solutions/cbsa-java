@@ -7,6 +7,7 @@ import com.augment.cbsa.error.CbsaAbendException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import org.jooq.DSLContext;
 import org.jooq.Record2;
@@ -22,7 +23,8 @@ import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 public class CrecustRepository {
 
     private static final String GLOBAL_CONTROL_ID = "GLOBAL";
-    private static final DateTimeFormatter PROCTRAN_DOB_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter PROCTRAN_DOB_FORMATTER =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
     private static final long MAX_CUSTOMER_NUMBER = 9_999_999_999L;
     // Standard abend code for failures to write the PROCTRAN audit trail.
     // See Section 12 of docs/translation-rules.md.
@@ -177,8 +179,8 @@ public class CrecustRepository {
 
     private String toDescription(CustomerDetails customer) {
         return customer.sortcode()
-                + String.format("%010d", customer.customerNumber())
-                + String.format("%-14.14s", customer.name())
+                + String.format(Locale.ROOT, "%010d", customer.customerNumber())
+                + String.format(Locale.ROOT, "%-14.14s", customer.name())
                 + customer.dateOfBirth().format(PROCTRAN_DOB_FORMATTER);
     }
 

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -25,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/inqacc")
 public class InqaccController {
 
-    private static final DateTimeFormatter COBOL_DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private static final DateTimeFormatter COBOL_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("ddMMyyyy", Locale.ROOT);
     private static final String EYE_CATCHER = "ACCT";
 
     private final InqaccService inqaccService;

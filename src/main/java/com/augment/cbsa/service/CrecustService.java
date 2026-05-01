@@ -16,6 +16,7 @@ import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Service;
 public class CrecustService {
 
     private static final DateTimeFormatter COBOL_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("ddMMuuuu").withResolverStyle(ResolverStyle.STRICT);
+            DateTimeFormatter.ofPattern("ddMMuuuu", Locale.ROOT).withResolverStyle(ResolverStyle.STRICT);
     private static final int CREDIT_AGENCY_COUNT = 5;
     private static final int REVIEW_DATE_BOUND = 20;
     private static final long CREDIT_AGENCY_REPLY_WINDOW_SECONDS = 3;
@@ -113,7 +114,7 @@ public class CrecustService {
     }
 
     private Optional<LocalDate> parseDateOfBirth(int cobolDate) {
-        String normalized = String.format("%08d", cobolDate);
+        String normalized = String.format(Locale.ROOT, "%08d", cobolDate);
         try {
             return Optional.of(LocalDate.parse(normalized, COBOL_DATE_FORMATTER));
         } catch (DateTimeParseException exception) {
