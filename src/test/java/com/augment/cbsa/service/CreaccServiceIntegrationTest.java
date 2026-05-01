@@ -27,6 +27,9 @@ class CreaccServiceIntegrationTest extends AbstractCockroachIntegrationTest {
     @Autowired
     private CreaccService creaccService;
 
+    @Autowired
+    private Clock clock;
+
     @BeforeEach
     void cleanDatabase() {
         dsl.deleteFrom(PROCTRAN).execute();
@@ -44,7 +47,7 @@ class CreaccServiceIntegrationTest extends AbstractCockroachIntegrationTest {
     @Test
     void createsAccountAuditTrailAndControlRow() {
         insertCustomer(10L);
-        LocalDate today = LocalDate.now(Clock.systemUTC());
+        LocalDate today = LocalDate.now(clock);
 
         CreaccResult result = creaccService.create(request("ISA"));
 

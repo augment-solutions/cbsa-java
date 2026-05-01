@@ -88,10 +88,17 @@ public class CreaccService {
     }
 
     private boolean isSupportedAccountType(String accountType) {
-        return accountType.startsWith("ISA")
-                || accountType.startsWith("MORTGAGE")
-                || accountType.startsWith("SAVING")
-                || accountType.startsWith("CURRENT")
-                || accountType.startsWith("LOAN");
+        if (accountType == null) {
+            return false;
+        }
+        // COBOL ACCOUNT-TYPE-CHECK compared fixed-length prefixes of an 8-byte
+        // field (e.g. (1:3)='ISA'). Translate by trimming and matching the
+        // exact canonical names so values like "ISAFOO" no longer pass.
+        String trimmed = accountType.trim();
+        return "ISA".equals(trimmed)
+                || "MORTGAGE".equals(trimmed)
+                || "SAVING".equals(trimmed)
+                || "CURRENT".equals(trimmed)
+                || "LOAN".equals(trimmed);
     }
 }

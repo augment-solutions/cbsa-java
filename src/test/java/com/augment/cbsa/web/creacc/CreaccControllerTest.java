@@ -31,6 +31,9 @@ class CreaccControllerTest extends AbstractCockroachIntegrationTest {
     @Autowired
     private DSLContext dsl;
 
+    @Autowired
+    private Clock clock;
+
     @BeforeEach
     void cleanDatabase() {
         dsl.deleteFrom(PROCTRAN).execute();
@@ -48,7 +51,7 @@ class CreaccControllerTest extends AbstractCockroachIntegrationTest {
     @Test
     void returnsAccountForSuccessfulCreation() throws Exception {
         insertCustomer(10L);
-        LocalDate today = LocalDate.now(Clock.systemUTC());
+        LocalDate today = LocalDate.now(clock);
 
         mockMvc.perform(post("/api/v1/creacc/insert").contentType(APPLICATION_JSON).content(requestJson("ISA", 10L, 250L)))
                 .andExpect(status().isOk())
