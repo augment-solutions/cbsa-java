@@ -4,8 +4,10 @@ import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.DbcrfunOrigin;
 import com.augment.cbsa.domain.DbcrfunRequest;
 import com.augment.cbsa.domain.DbcrfunResult;
+import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.DbcrfunRepository;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -140,15 +142,29 @@ class DbcrfunServiceUnitTest {
     }
 
     @Test
-    void returnsGenericFailureWhenPersistenceThrowsDataAccessException() {
+    void rethrowsNonSerializationDataAccessExceptionForGlobalHandler() {
         when(dbcrfunRepository.lockAccount("987654", 12345678L)).thenThrow(new DataAccessException("boom") {
         });
 
-        DbcrfunResult result = dbcrfunService.process(request(new BigDecimal("25.00"), 496));
+        assertThatThrownBy(() -> dbcrfunService.process(request(new BigDecimal("25.00"), 496)))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("boom");
+    }
 
-        assertThat(result.paymentSuccess()).isFalse();
-        assertThat(result.failCode()).isEqualTo("2");
-        assertThat(result.message()).isEqualTo("DBCRFUN failed to update the account data.");
+    @Test
+    void surfacesXrtyAbendWhenSerializationRetryExhausted() {
+        SQLException sqle = new SQLException("Serialization failure", "40001");
+        when(dbcrfunRepository.lockAccount("987654", 12345678L)).thenThrow(new DataAccessException("wrapped", sqle) {
+        });
+
+        assertThatThrownBy(() -> dbcrfunService.process(request(new BigDecimal("25.00"), 496)))
+                .isInstanceOf(CbsaAbendException.class)
+                .satisfies(thrown -> {
+                    CbsaAbendException abend = (CbsaAbendException) thrown;
+                    assertThat(abend.getAbendCode()).isEqualTo("XRTY");
+                    assertThat(abend.getMessage())
+                            .isEqualTo("DBCRFUN aborted after exhausting Cockroach serialization retries.");
+                });
     }
 
     private DbcrfunRequest request(BigDecimal amount, int facilityType) {

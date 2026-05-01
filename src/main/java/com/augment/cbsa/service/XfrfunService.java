@@ -32,7 +32,9 @@ public class XfrfunService {
     private static final String SAME_ACCOUNT_ABEND_CODE = "SAME";
     private static final String FROM_ACCOUNT_ABEND_CODE = "FROM";
     private static final String TO_ACCOUNT_ABEND_CODE = "TO  ";
-    private static final String PROCTRAN_ABEND_CODE = "WPCD";
+    // Standard abend code for failures to write the PROCTRAN audit trail.
+    // See Section 12 of docs/translation-rules.md.
+    private static final String PROCTRAN_ABEND_CODE = "HWPT";
     private static final String RETRY_EXHAUSTED_ABEND_CODE = "XRTY";
 
     private final XfrfunRepository xfrfunRepository;
