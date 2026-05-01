@@ -78,7 +78,7 @@ public class AccountRepository {
         private final Cursor<AccountRecord> cursor;
 
         public CustomerAccountsCursor(Cursor<AccountRecord> cursor) {
-            this.cursor = cursor;
+            this.cursor = java.util.Objects.requireNonNull(cursor, "cursor must not be null");
         }
 
         private Cursor<AccountRecord> cursor() {

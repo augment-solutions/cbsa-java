@@ -6,10 +6,12 @@ import com.augment.cbsa.domain.InqacccuRequest;
 import com.augment.cbsa.domain.InqacccuResult;
 import com.augment.cbsa.domain.InqcustRequest;
 import com.augment.cbsa.domain.InqcustResult;
+import com.augment.cbsa.jooq.tables.records.AccountRecord;
 import com.augment.cbsa.repository.AccountRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import org.jooq.Cursor;
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +72,7 @@ class InqacccuServiceUnitTest {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
         InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
-        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(null);
+        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);
         when(accountRepository.fetchNext(cursor))
@@ -107,7 +109,7 @@ class InqacccuServiceUnitTest {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
         InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
-        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(null);
+        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);
         when(accountRepository.fetchNext(cursor)).thenThrow(new DataAccessException("boom") {
@@ -126,7 +128,7 @@ class InqacccuServiceUnitTest {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
         InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
-        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(null);
+        AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);
         when(accountRepository.fetchNext(cursor)).thenThrow(new DataAccessException("boom") {
@@ -139,6 +141,11 @@ class InqacccuServiceUnitTest {
         assertThat(result.inquirySuccess()).isFalse();
         assertThat(result.failCode()).isEqualTo("4");
         assertThat(result.message()).isEqualTo("INQACCCU failed to close the account cursor.");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Cursor<AccountRecord> mockCursor() {
+        return mock(Cursor.class);
     }
 
     private CustomerDetails customer(long customerNumber) {
