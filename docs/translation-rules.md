@@ -75,13 +75,21 @@ Never persist both forms.
 
 - All persistence goes through generated jOOQ `DSLContext` + table records
   in `com.augment.cbsa.jooq`. **Never** hand-write JDBC SQL.
-- Wrap multi-statement business operations in `dsl.transaction(c -> { ... })`
-  blocks. CockroachDB returns serialization errors (`40001`) on contended
-  transactions — wrap with the **CockroachDB retry helper**
-  `CrdbRetry.run(dsl, () -> ...)` (introduced as part of the first program
-  that needs it). Never re-throw `40001`.
-- Read-only paths use `dsl.connection(c -> c.setReadOnly(true))` only when
-  beneficial; otherwise plain `dsl.selectFrom(...)`.
+- Wrap multi-statement business operations in
+  `dsl.transaction(cfg -> { ... })`. The lambda receives a jOOQ
+  `Configuration` bound to the transaction; **all** queries inside the
+  block must be executed via that configuration, e.g.
+  `DSL.using(cfg).insertInto(ACCOUNT)...` or by accepting `Configuration`
+  in the helper and calling `cfg.dsl().insertInto(...)`. Queries issued
+  through the outer `dsl` instead run outside the transaction.
+- CockroachDB returns serialization errors (`40001`) on contended
+  transactions — wrap the whole `dsl.transaction(...)` call in the
+  **CockroachDB retry helper** `CrdbRetry.run(dsl, () -> ...)` (introduced
+  as part of the first program that needs it). Never re-throw `40001`.
+- Read-only paths use plain `dsl.selectFrom(...)` returning records or
+  `Optional`. Do **not** call `dsl.connection(c -> c.setReadOnly(true))`
+  as a "read-only mode" knob — it only mutates the borrowed connection
+  inside that callback and has no effect on subsequent `dsl` queries.
 - Sequence-allocation idioms (NCS `HBNKCUST`, `HBNKACCT`) are replaced by an
   UPSERT against `control`:
   `UPDATE control SET customer_last = customer_last + 1 RETURNING customer_last`.
