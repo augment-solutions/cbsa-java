@@ -27,6 +27,7 @@ public record InqcustResult(
     }
 
     public static InqcustResult success(CustomerDetails customer) {
+        Objects.requireNonNull(customer, "customer must not be null");
         return new InqcustResult(true, "0", customer.customerNumber(), customer, null);
     }
 
