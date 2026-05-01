@@ -19,7 +19,7 @@ class UpdaccServiceUnitTest {
     @Test
     void rejectsNullRequestWithClearMessage() {
         UpdaccRepository repository = mock(UpdaccRepository.class);
-        UpdaccService service = new UpdaccService(repository, "987654");
+        UpdaccService service = new UpdaccService(repository, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         assertThatThrownBy(() -> service.update(null))
                 .isInstanceOf(NullPointerException.class)
@@ -30,7 +30,7 @@ class UpdaccServiceUnitTest {
     @Test
     void rejectsBlankAccountTypeBeforeHittingTheRepository() {
         UpdaccRepository repository = mock(UpdaccRepository.class);
-        UpdaccService service = new UpdaccService(repository, "987654");
+        UpdaccService service = new UpdaccService(repository, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         UpdaccResult result = service.update(new UpdaccRequest(12345678L, "", new BigDecimal("2.25"), 500L));
 
@@ -43,7 +43,7 @@ class UpdaccServiceUnitTest {
     @Test
     void rejectsLeadingSpaceAccountTypeBeforeHittingTheRepository() {
         UpdaccRepository repository = mock(UpdaccRepository.class);
-        UpdaccService service = new UpdaccService(repository, "987654");
+        UpdaccService service = new UpdaccService(repository, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         UpdaccResult result = service.update(new UpdaccRequest(12345678L, " ISA", new BigDecimal("2.25"), 500L));
 
@@ -55,7 +55,7 @@ class UpdaccServiceUnitTest {
     @Test
     void acceptsAnyNonBlankAccountTypeThatDoesNotStartWithSpace() {
         UpdaccRepository repository = mock(UpdaccRepository.class);
-        UpdaccService service = new UpdaccService(repository, "987654");
+        UpdaccService service = new UpdaccService(repository, new com.augment.cbsa.config.CbsaProperties("987654"));
         UpdaccRequest request = new UpdaccRequest(12345678L, "BROKER", new BigDecimal("2.25"), 500L);
         when(repository.updateAccount("987654", request)).thenReturn(UpdaccResult.success(account("BROKER")));
 

@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.UpdcustRequest;
 import com.augment.cbsa.domain.UpdcustResult;
 import com.augment.cbsa.repository.UpdcustRepository;
@@ -12,7 +13,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,9 +26,9 @@ public class UpdcustService {
     private final String sortcode;
     private final Clock clock;
 
-    public UpdcustService(UpdcustRepository updcustRepository, @Value("${cbsa.sortcode}") String sortcode, Clock clock) {
+    public UpdcustService(UpdcustRepository updcustRepository, CbsaProperties cbsaProperties, Clock clock) {
         this.updcustRepository = Objects.requireNonNull(updcustRepository, "updcustRepository must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 

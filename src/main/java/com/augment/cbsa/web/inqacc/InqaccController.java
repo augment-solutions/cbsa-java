@@ -85,7 +85,7 @@ public class InqaccController {
         return new InqaccResponseDto(
                 EYE_CATCHER,
                 account.customerNumber(),
-                Integer.parseInt(account.sortcode()),
+                account.sortcode(),
                 account.accountNumber(),
                 account.accountType(),
                 account.interestRate(),

@@ -40,7 +40,13 @@ class CreaccServiceUnitTest {
         creaccRepository = mock(CreaccRepository.class);
         inqcustService = mock(InqcustService.class);
         inqacccuService = mock(InqacccuService.class);
-        creaccService = new CreaccService(creaccRepository, inqcustService, inqacccuService, "987654", FIXED_CLOCK);
+        creaccService = new CreaccService(
+                creaccRepository,
+                inqcustService,
+                inqacccuService,
+                new com.augment.cbsa.config.CbsaProperties("987654"),
+                FIXED_CLOCK
+        );
     }
 
     @Test

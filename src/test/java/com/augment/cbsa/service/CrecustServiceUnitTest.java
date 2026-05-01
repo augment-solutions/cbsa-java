@@ -44,7 +44,13 @@ class CrecustServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        crecustService = new CrecustService(crecustRepository, creditAgencyService, "987654", FIXED_CLOCK, reviewDateRandom);
+        crecustService = new CrecustService(
+                crecustRepository,
+                creditAgencyService,
+                new com.augment.cbsa.config.CbsaProperties("987654"),
+                FIXED_CLOCK,
+                reviewDateRandom
+        );
     }
 
     @Test

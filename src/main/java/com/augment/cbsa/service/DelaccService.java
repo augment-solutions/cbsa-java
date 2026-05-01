@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.DelaccRequest;
 import com.augment.cbsa.domain.DelaccResult;
@@ -17,7 +18,6 @@ import java.util.Objects;
 import java.util.Optional;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -39,13 +39,13 @@ public class DelaccService {
             DelaccRepository delaccRepository,
             DSLContext dsl,
             TransactionTemplate transactionTemplate,
-            @Value("${cbsa.sortcode}") String sortcode,
+            CbsaProperties cbsaProperties,
             Clock clock
     ) {
         this.delaccRepository = Objects.requireNonNull(delaccRepository, "delaccRepository must not be null");
         this.dsl = Objects.requireNonNull(dsl, "dsl must not be null");
         this.transactionTemplate = Objects.requireNonNull(transactionTemplate, "transactionTemplate must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 

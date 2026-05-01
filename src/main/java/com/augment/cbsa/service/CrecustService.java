@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.CrecustCommand;
 import com.augment.cbsa.domain.CrecustRequest;
 import com.augment.cbsa.domain.CrecustResult;
@@ -24,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,13 +48,13 @@ public class CrecustService {
     public CrecustService(
             CrecustRepository crecustRepository,
             CreditAgencyService creditAgencyService,
-            @Value("${cbsa.sortcode}") String sortcode,
+            CbsaProperties cbsaProperties,
             Clock clock,
             @Qualifier("crecustReviewRandom") Random reviewDateRandom
     ) {
         this.crecustRepository = Objects.requireNonNull(crecustRepository, "crecustRepository must not be null");
         this.creditAgencyService = Objects.requireNonNull(creditAgencyService, "creditAgencyService must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.reviewDateRandom = Objects.requireNonNull(reviewDateRandom, "reviewDateRandom must not be null");
     }

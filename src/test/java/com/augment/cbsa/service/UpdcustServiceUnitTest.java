@@ -30,7 +30,11 @@ class UpdcustServiceUnitTest {
     @BeforeEach
     void setUp() {
         updcustRepository = mock(UpdcustRepository.class);
-        updcustService = new UpdcustService(updcustRepository, "987654", FIXED_CLOCK);
+        updcustService = new UpdcustService(
+                updcustRepository,
+                new com.augment.cbsa.config.CbsaProperties("987654"),
+                FIXED_CLOCK
+        );
     }
 
     @Test

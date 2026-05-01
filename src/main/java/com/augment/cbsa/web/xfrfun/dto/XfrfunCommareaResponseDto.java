@@ -8,13 +8,13 @@ public record XfrfunCommareaResponseDto(
         long commFaccno,
 
         @JsonProperty("CommFscode")
-        int commFscode,
+        String commFscode,
 
         @JsonProperty("CommTaccno")
         long commTaccno,
 
         @JsonProperty("CommTscode")
-        int commTscode,
+        String commTscode,
 
         @JsonProperty("CommAmt")
         BigDecimal commAmt,

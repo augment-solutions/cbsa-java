@@ -83,7 +83,7 @@ public class CrecustController {
         CustomerDetails customer = Objects.requireNonNull(result.customer(), "Successful response requires a customer");
         return new CrecustResponseDto(new CrecustCommareaResponseDto(
                 EYE_CATCHER,
-                new CrecustKeyDto(Integer.parseInt(customer.sortcode()), customer.customerNumber()),
+                new CrecustKeyDto(customer.sortcode(), customer.customerNumber()),
                 customer.name(),
                 customer.address(),
                 toCobolDate(customer.dateOfBirth()),

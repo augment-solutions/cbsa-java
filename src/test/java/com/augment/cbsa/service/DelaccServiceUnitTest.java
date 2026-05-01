@@ -48,7 +48,13 @@ class DelaccServiceUnitTest {
             return callback.doInTransaction(new SimpleTransactionStatus());
         });
 
-        delaccService = new DelaccService(delaccRepository, dsl, transactionTemplate, "987654", FIXED_CLOCK);
+        delaccService = new DelaccService(
+                delaccRepository,
+                dsl,
+                transactionTemplate,
+                new com.augment.cbsa.config.CbsaProperties("987654"),
+                FIXED_CLOCK
+        );
     }
 
     @Test

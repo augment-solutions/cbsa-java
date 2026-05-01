@@ -28,7 +28,7 @@ class InqacccuServiceUnitTest {
     void rejectsNullRequestWithClearMessage() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         assertThatThrownBy(() -> service.inquire(null))
                 .isInstanceOf(NullPointerException.class)
@@ -40,7 +40,7 @@ class InqacccuServiceUnitTest {
     void sentinelCustomerNumbersReturnNotFoundWithoutCallingDependencies() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         InqacccuResult zeroResult = service.inquire(new InqacccuRequest(0L));
         InqacccuResult lastResult = service.inquire(new InqacccuRequest(9_999_999_999L));
@@ -56,7 +56,7 @@ class InqacccuServiceUnitTest {
     void returnsNotFoundWhenLinkedCustomerInquiryFails() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(inqcustService.inquire(new InqcustRequest(10L)))
                 .thenReturn(InqcustResult.failure("1", 10L, "Customer number 10 was not found."));
 
@@ -71,7 +71,7 @@ class InqacccuServiceUnitTest {
     void returnsAccountsForExistingCustomerIncludingBlankAccountTypes() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
         AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);
@@ -91,7 +91,7 @@ class InqacccuServiceUnitTest {
     void returnsOpenFailureWhenCursorCannotBeOpened() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L))
                 .thenThrow(new DataAccessException("boom") {
@@ -108,7 +108,7 @@ class InqacccuServiceUnitTest {
     void returnsFetchFailureWhenCursorIterationFails() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
         AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);
@@ -127,7 +127,7 @@ class InqacccuServiceUnitTest {
     void closeFailureOverridesEarlierFetchFailure() {
         AccountRepository accountRepository = mock(AccountRepository.class);
         InqcustService inqcustService = mock(InqcustService.class);
-        InqacccuService service = new InqacccuService(accountRepository, inqcustService, "987654");
+        InqacccuService service = new InqacccuService(accountRepository, inqcustService, new com.augment.cbsa.config.CbsaProperties("987654"));
         AccountRepository.CustomerAccountsCursor cursor = new AccountRepository.CustomerAccountsCursor(mockCursor());
         when(inqcustService.inquire(new InqcustRequest(10L))).thenReturn(InqcustResult.success(customer(10L)));
         when(accountRepository.openCustomerAccountsCursor("987654", 10L)).thenReturn(cursor);

@@ -22,7 +22,7 @@ class InqaccServiceUnitTest {
     @Test
     void rejectsNullRequestWithClearMessage() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
 
         assertThatThrownBy(() -> service.inquire(null))
                 .isInstanceOf(NullPointerException.class)
@@ -33,7 +33,7 @@ class InqaccServiceUnitTest {
     @Test
     void returnsAccountForExactAccountNumber() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findBySortcodeAndAccountNumber("987654", 12345678L))
                 .thenReturn(Optional.of(account(12345678L, "ISA")));
 
@@ -48,7 +48,7 @@ class InqaccServiceUnitTest {
     @Test
     void returnsNotFoundWhenExactAccountDoesNotExist() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findBySortcodeAndAccountNumber("987654", 12345678L)).thenReturn(Optional.empty());
 
         InqaccResult result = service.inquire(new InqaccRequest(12345678L));
@@ -63,7 +63,7 @@ class InqaccServiceUnitTest {
         // COBOL INQACC.cbl does not filter rows by account_type; blank-type
         // accounts are returned as-is.
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findBySortcodeAndAccountNumber("987654", 12345678L))
                 .thenReturn(Optional.of(account(12345678L, " ")));
 
@@ -77,7 +77,7 @@ class InqaccServiceUnitTest {
     @Test
     void lastAccountModeReturnsHighestAccount() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findLastBySortcode("987654")).thenReturn(Optional.of(account(99999998L, "SAVINGS")));
 
         InqaccResult result = service.inquire(new InqaccRequest(99_999_999L));
@@ -90,7 +90,7 @@ class InqaccServiceUnitTest {
     @Test
     void lastAccountModeReturnsNotFoundWhenNoAccountsExist() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findLastBySortcode("987654")).thenReturn(Optional.empty());
 
         InqaccResult result = service.inquire(new InqaccRequest(99_999_999L));
@@ -103,7 +103,7 @@ class InqaccServiceUnitTest {
     @Test
     void wrapsExactLookupDataAccessFailuresInHracAbend() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findBySortcodeAndAccountNumber("987654", 12345678L))
                 .thenThrow(new DataAccessException("boom") {
                 });
@@ -118,7 +118,7 @@ class InqaccServiceUnitTest {
     @Test
     void wrapsLastLookupDataAccessFailuresInHncsAbend() {
         AccountRepository accountRepository = mock(AccountRepository.class);
-        InqaccService service = new InqaccService(accountRepository, "987654");
+        InqaccService service = new InqaccService(accountRepository, new com.augment.cbsa.config.CbsaProperties("987654"));
         when(accountRepository.findLastBySortcode("987654"))
                 .thenThrow(new DataAccessException("boom") {
                 });

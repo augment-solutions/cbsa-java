@@ -1,10 +1,10 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.UpdaccRequest;
 import com.augment.cbsa.domain.UpdaccResult;
 import com.augment.cbsa.repository.UpdaccRepository;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,9 +13,9 @@ public class UpdaccService {
     private final UpdaccRepository updaccRepository;
     private final String sortcode;
 
-    public UpdaccService(UpdaccRepository updaccRepository, @Value("${cbsa.sortcode}") String sortcode) {
+    public UpdaccService(UpdaccRepository updaccRepository, CbsaProperties cbsaProperties) {
         this.updaccRepository = Objects.requireNonNull(updaccRepository, "updaccRepository must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
     }
 
     public UpdaccResult update(UpdaccRequest request) {

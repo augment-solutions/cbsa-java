@@ -94,7 +94,7 @@ public class CreaccController {
         return new CreaccResponseDto(new CreaccCommareaResponseDto(
                 EYE_CATCHER,
                 account.customerNumber(),
-                new CreaccKeyDto(Integer.parseInt(account.sortcode()), account.accountNumber()),
+                new CreaccKeyDto(account.sortcode(), account.accountNumber()),
                 account.accountType(),
                 account.interestRate(),
                 toCobolDate(account.opened()),

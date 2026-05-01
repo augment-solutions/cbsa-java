@@ -44,7 +44,7 @@ class CreaccControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.CreAcc.CommEyecatcher").value("ACCT"))
                 .andExpect(jsonPath("$.CreAcc.CommCustno").value(10))
-                .andExpect(jsonPath("$.CreAcc.CommKey.CommSortcode").value(987654))
+                .andExpect(jsonPath("$.CreAcc.CommKey.CommSortcode").value("987654"))
                 .andExpect(jsonPath("$.CreAcc.CommKey.CommNumber").value(1));
     }
 
@@ -96,7 +96,7 @@ class CreaccControllerWebMvcTest {
                   "CreAcc": {
                     "CommEyecatcher": "ACCT",
                     "CommCustno": %d,
-                    "CommKey": {"CommSortcode": 0, "CommNumber": 0},
+                    "CommKey": {"CommSortcode": "000000", "CommNumber": 0},
                     "CommAccType": "%s",
                     "CommIntRt": 1.50,
                     "CommOpened": 0,

@@ -48,7 +48,7 @@ class CrdtagyControllerWebMvcTest {
                         .content(requestJson()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.CreCust.CommEyecatcher").value("CUST"))
-                .andExpect(jsonPath("$.CreCust.CommKey.CommSortcode").value(987654))
+                .andExpect(jsonPath("$.CreCust.CommKey.CommSortcode").value("987654"))
                 .andExpect(jsonPath("$.CreCust.CommCreditScore").value(450 + agencyNumber));
     }
 
@@ -66,7 +66,7 @@ class CrdtagyControllerWebMvcTest {
         mockMvc.perform(post("/api/v1/crdtagy/{agencyNumber}", 1)
                         .contentType(APPLICATION_JSON)
                         .content("""
-                                {"CreCust":{"CommKey":{"CommSortcode":1000000,"CommNumber":0},"CommName":"Dr Alice Example","CommAddress":"1 Main Street","CommDateOfBirth":10012000}}
+                                {"CreCust":{"CommKey":{"CommSortcode":"1000000","CommNumber":0},"CommName":"Dr Alice Example","CommAddress":"1 Main Street","CommDateOfBirth":10012000}}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"));
@@ -91,7 +91,7 @@ class CrdtagyControllerWebMvcTest {
                 {
                   "CreCust": {
                     "CommEyecatcher": "CUST",
-                    "CommKey": {"CommSortcode": 987654, "CommNumber": 42},
+                    "CommKey": {"CommSortcode": "987654", "CommNumber": 42},
                     "CommName": "Dr Alice Example",
                     "CommAddress": "1 Main Street",
                     "CommDateOfBirth": 10012000,

@@ -51,7 +51,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
         mockMvc.perform(post("/api/v1/dbcrfun").contentType(APPLICATION_JSON).content(requestJson("-25.00", 496)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.PAYDBCR.CommAccno").value("12345678"))
-                .andExpect(jsonPath("$.PAYDBCR.mSortC").value(987654))
+                .andExpect(jsonPath("$.PAYDBCR.mSortC").value("987654"))
                 .andExpect(jsonPath("$.PAYDBCR.CommAvBal").value(475.00))
                 .andExpect(jsonPath("$.PAYDBCR.CommActBal").value(475.00))
                 .andExpect(jsonPath("$.PAYDBCR.CommSuccess").value("Y"))
@@ -132,7 +132,7 @@ class DbcrfunControllerTest extends AbstractCockroachIntegrationTest {
                   "PAYDBCR": {
                     "CommAccno": "12345678",
                     "CommAmt": %s,
-                    "mSortC": 0,
+                    "mSortC": "000000",
                     "CommAvBal": 0,
                     "CommActBal": 0,
                     "CommOrigin": {

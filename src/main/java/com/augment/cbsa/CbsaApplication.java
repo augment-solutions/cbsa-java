@@ -1,13 +1,16 @@
 package com.augment.cbsa;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.service.RandomCustomerNumberGenerator;
 import java.util.Random;
 import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@EnableConfigurationProperties(CbsaProperties.class)
 public class CbsaApplication {
 
     @Bean
