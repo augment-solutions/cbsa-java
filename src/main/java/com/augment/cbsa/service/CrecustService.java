@@ -62,6 +62,13 @@ public class CrecustService {
     public CrecustResult create(CrecustRequest request) {
         Objects.requireNonNull(request, "request must not be null");
 
+        // Capture the clock once so validation, review-date, transaction-date
+        // and transaction-time all derive from the same instant. Reading the
+        // clock multiple times can otherwise straddle midnight and produce an
+        // off-by-one-day audit record.
+        Instant now = Instant.now(clock);
+        LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
+
         Optional<CrecustResult> titleFailure = validateTitle(request.name());
         if (titleFailure.isPresent()) {
             return titleFailure.get();
@@ -73,17 +80,16 @@ public class CrecustService {
         }
 
         LocalDate dateOfBirth = parsedDateOfBirth.get();
-        Optional<CrecustResult> dateFailure = validateDateOfBirth(dateOfBirth);
+        Optional<CrecustResult> dateFailure = validateDateOfBirth(today, dateOfBirth);
         if (dateFailure.isPresent()) {
             return dateFailure.get();
         }
 
-        CreditDecision creditDecision = evaluateCredit(request);
+        CreditDecision creditDecision = evaluateCredit(request, today);
         if (creditDecision == null) {
             return CrecustResult.failure("G", "Credit check could not be completed.");
         }
 
-        Instant now = Instant.now(clock);
         CrecustCommand command = new CrecustCommand(
                 sortcode,
                 request.name(),
@@ -92,7 +98,7 @@ public class CrecustService {
                 creditDecision.creditScore(),
                 creditDecision.reviewDate(),
                 Math.max(0L, now.toEpochMilli()),
-                LocalDate.ofInstant(now, ZoneOffset.UTC),
+                today,
                 LocalTime.ofInstant(now, ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS)
         );
         return crecustRepository.createCustomer(command);
@@ -126,8 +132,7 @@ public class CrecustService {
         return CrecustResult.failure("Z", "Date of birth is invalid.");
     }
 
-    private Optional<CrecustResult> validateDateOfBirth(LocalDate dateOfBirth) {
-        LocalDate today = LocalDate.now(clock);
+    private Optional<CrecustResult> validateDateOfBirth(LocalDate today, LocalDate dateOfBirth) {
         if (dateOfBirth.getYear() < 1601) {
             return Optional.of(CrecustResult.failure("O", "Date of birth must not be earlier than 1601."));
         }
@@ -140,7 +145,7 @@ public class CrecustService {
         return Optional.empty();
     }
 
-    private CreditDecision evaluateCredit(CrecustRequest request) {
+    private CreditDecision evaluateCredit(CrecustRequest request, LocalDate today) {
         List<CompletableFuture<Optional<Integer>>> futures = new ArrayList<>();
         for (int agencyNumber = 1; agencyNumber <= CREDIT_AGENCY_COUNT; agencyNumber++) {
             futures.add(creditAgencyService.requestCreditScore(request, agencyNumber));
@@ -148,7 +153,12 @@ public class CrecustService {
 
         int totalScore = 0;
         int returnedScores = 0;
+        boolean interrupted = false;
         for (CompletableFuture<Optional<Integer>> future : futures) {
+            if (interrupted) {
+                future.cancel(true);
+                continue;
+            }
             try {
                 Optional<Integer> maybeScore = future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 if (maybeScore.isPresent()) {
@@ -162,17 +172,21 @@ public class CrecustService {
             } catch (ExecutionException | CompletionException exception) {
                 // Ignore individual credit-agency failures and average only successful replies.
             } catch (InterruptedException exception) {
+                // Treat interruption as an immediate overall credit-check failure
+                // so we do not persist a customer based on partially collected
+                // scores while cancellation is being signaled.
                 Thread.currentThread().interrupt();
                 future.cancel(true);
+                interrupted = true;
             }
         }
 
-        if (returnedScores == 0) {
+        if (interrupted || returnedScores == 0) {
             return null;
         }
 
         int reviewOffsetDays = reviewDateRandom.nextInt(REVIEW_DATE_BOUND) + 1;
-        return new CreditDecision(totalScore / returnedScores, LocalDate.now(clock).plusDays(reviewOffsetDays));
+        return new CreditDecision(totalScore / returnedScores, today.plusDays(reviewOffsetDays));
     }
 
     private String firstToken(String name) {

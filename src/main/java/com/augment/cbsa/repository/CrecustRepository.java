@@ -21,6 +21,7 @@ public class CrecustRepository {
 
     private static final String GLOBAL_CONTROL_ID = "GLOBAL";
     private static final DateTimeFormatter PROCTRAN_DOB_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final long MAX_CUSTOMER_NUMBER = 9_999_999_999L;
 
     private final DSLContext dsl;
 
@@ -68,6 +69,12 @@ public class CrecustRepository {
             nextCustomerNumber = Math.addExact(baselineLast, 1L);
             nextCustomerCount = Math.addExact(baselineCount, 1L);
         } catch (ArithmeticException exception) {
+            throw rollbackFailure("4", "Customer numbering has reached its maximum value.");
+        }
+        // PROCTRAN.DESCRIPTION carries the customer number formatted as %010d,
+        // which is part of the fixed 40-char audit layout. Reject allocations
+        // beyond 10 digits up front so we never silently overflow the layout.
+        if (nextCustomerNumber > MAX_CUSTOMER_NUMBER) {
             throw rollbackFailure("4", "Customer numbering has reached its maximum value.");
         }
 
