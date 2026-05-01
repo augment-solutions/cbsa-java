@@ -57,7 +57,7 @@ class CreaccControllerTest extends AbstractCockroachIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.CreAcc.CommEyecatcher").value("ACCT"))
                 .andExpect(jsonPath("$.CreAcc.CommCustno").value(10))
-                .andExpect(jsonPath("$.CreAcc.CommKey.CommSortcode").value(987654))
+                .andExpect(jsonPath("$.CreAcc.CommKey.CommSortcode").value("987654"))
                 .andExpect(jsonPath("$.CreAcc.CommKey.CommNumber").value(1))
                 .andExpect(jsonPath("$.CreAcc.CommOpened").value(Integer.parseInt(today.format(java.time.format.DateTimeFormatter.ofPattern("ddMMyyyy")))))
                 .andExpect(jsonPath("$.CreAcc.CommNextStmtDt").value(Integer.parseInt(today.plusDays(30).format(java.time.format.DateTimeFormatter.ofPattern("ddMMyyyy")))));
@@ -131,7 +131,7 @@ class CreaccControllerTest extends AbstractCockroachIntegrationTest {
                   "CreAcc": {
                     "CommEyecatcher": "ACCT",
                     "CommCustno": %d,
-                    "CommKey": {"CommSortcode": 0, "CommNumber": 0},
+                    "CommKey": {"CommSortcode": "000000", "CommNumber": 0},
                     "CommAccType": "%s",
                     "CommIntRt": 1.50,
                     "CommOpened": 0,

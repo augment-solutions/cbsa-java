@@ -11,7 +11,7 @@ public record DbcrfunCommareaResponseDto(
         BigDecimal commAmt,
 
         @JsonProperty("mSortC")
-        int mSortC,
+        String mSortC,
 
         @JsonProperty("CommAvBal")
         BigDecimal commAvBal,

@@ -4,14 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.Objects;
 
 public record CrecustKeyDto(
         @JsonProperty("CommSortcode")
         @NotNull
-        @Min(0)
-        @Max(999_999)
-        Integer commSortcode,
+        @Pattern(regexp = "\\d{6}")
+        String commSortcode,
 
         @JsonProperty("CommNumber")
         @NotNull

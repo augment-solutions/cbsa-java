@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.domain.InqacccuRequest;
 import com.augment.cbsa.domain.InqacccuResult;
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jooq.exception.DataAccessException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +32,11 @@ public class InqacccuService {
     public InqacccuService(
             AccountRepository accountRepository,
             InqcustService inqcustService,
-            @Value("${cbsa.sortcode}") String sortcode
+            CbsaProperties cbsaProperties
     ) {
         this.accountRepository = accountRepository;
         this.inqcustService = inqcustService;
-        this.sortcode = sortcode;
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
     }
 
     @Transactional(propagation = Propagation.REQUIRED, readOnly = true)

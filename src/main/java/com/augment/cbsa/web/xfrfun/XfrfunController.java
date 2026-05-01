@@ -1,5 +1,6 @@
 package com.augment.cbsa.web.xfrfun;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.XfrfunRequest;
 import com.augment.cbsa.domain.XfrfunResult;
 import com.augment.cbsa.service.XfrfunService;
@@ -9,7 +10,6 @@ import com.augment.cbsa.web.xfrfun.dto.XfrfunRequestDto;
 import com.augment.cbsa.web.xfrfun.dto.XfrfunResponseDto;
 import jakarta.validation.Valid;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +27,9 @@ public class XfrfunController {
     private final XfrfunService xfrfunService;
     private final String sortcode;
 
-    public XfrfunController(XfrfunService xfrfunService, @Value("${cbsa.sortcode}") String sortcode) {
+    public XfrfunController(XfrfunService xfrfunService, CbsaProperties cbsaProperties) {
         this.xfrfunService = Objects.requireNonNull(xfrfunService, "xfrfunService must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
     }
 
     @PostMapping
@@ -48,9 +48,9 @@ public class XfrfunController {
 
         return ResponseEntity.ok(new XfrfunResponseDto(new XfrfunCommareaResponseDto(
                 commarea.commFaccno(),
-                Integer.parseInt(sortcode),
+                sortcode,
                 commarea.commTaccno(),
-                Integer.parseInt(sortcode),
+                sortcode,
                 serviceRequest.amount(),
                 result.fromAvailableBalance(),
                 result.fromActualBalance(),

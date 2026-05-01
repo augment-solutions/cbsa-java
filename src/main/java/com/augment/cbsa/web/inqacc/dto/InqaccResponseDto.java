@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record InqaccResponseDto(
         String eye,
         long customerNumber,
-        int sortcode,
+        String sortcode,
         long accountNumber,
         String accountType,
         BigDecimal interestRate,

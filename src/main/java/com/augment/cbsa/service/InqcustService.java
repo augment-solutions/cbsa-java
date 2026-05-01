@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.CustomerDetails;
 import com.augment.cbsa.domain.InqcustRequest;
 import com.augment.cbsa.domain.InqcustResult;
@@ -8,7 +9,6 @@ import com.augment.cbsa.repository.CustomerRepository;
 import java.util.Objects;
 import java.util.Optional;
 import org.jooq.exception.DataAccessException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,11 +28,11 @@ public class InqcustService {
 
     public InqcustService(
             CustomerRepository customerRepository,
-            @Value("${cbsa.sortcode}") String sortcode,
+            CbsaProperties cbsaProperties,
             RandomCustomerNumberGenerator randomCustomerNumberGenerator
     ) {
         this.customerRepository = customerRepository;
-        this.sortcode = sortcode;
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
         this.randomCustomerNumberGenerator = randomCustomerNumberGenerator;
     }
 

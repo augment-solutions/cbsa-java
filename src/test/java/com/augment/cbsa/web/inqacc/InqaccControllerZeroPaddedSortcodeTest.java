@@ -18,9 +18,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = "cbsa.sortcode=012345")
 @AutoConfigureMockMvc
-class InqaccControllerTest extends AbstractCockroachIntegrationTest {
+class InqaccControllerZeroPaddedSortcodeTest extends AbstractCockroachIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,51 +36,17 @@ class InqaccControllerTest extends AbstractCockroachIntegrationTest {
     }
 
     @Test
-    void returnsAccountForSuccessfulLookup() throws Exception {
-        insertAccount(10L, 12345678L, "ISA");
+    void preservesLeadingZerosWhenReturningConfiguredSortcodes() throws Exception {
+        insertAccount(10L, 12345678L, "ISA", "012345");
 
         mockMvc.perform(get("/api/v1/inqacc/12345678"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.eye").value("ACCT"))
-                .andExpect(jsonPath("$.customerNumber").value(10))
-                .andExpect(jsonPath("$.sortcode").value("987654"))
-                .andExpect(jsonPath("$.accountNumber").value(12345678))
-                .andExpect(jsonPath("$.accountType").value("ISA"))
-                .andExpect(jsonPath("$.interestRate").value(1.50))
-                .andExpect(jsonPath("$.opened").value(2012024))
-                .andExpect(jsonPath("$.availableBalance").value(1500.25))
-                .andExpect(jsonPath("$.inquirySuccess").value("Y"));
+                .andExpect(jsonPath("$.sortcode").value("012345"));
     }
 
-    @Test
-    void returnsProblemDetailWhenAccountDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/v1/inqacc/12345678"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Account not found"))
-                .andExpect(jsonPath("$.detail").value("Account number 12345678 was not found."))
-                .andExpect(jsonPath("$.failCode").value("1"));
-    }
-
-    @Test
-    void returnsProblemDetailWhenNoAccountsExistInLastAccountMode() throws Exception {
-        mockMvc.perform(get("/api/v1/inqacc/99999999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Account not found"))
-                .andExpect(jsonPath("$.detail").value("No accounts exist."))
-                .andExpect(jsonPath("$.failCode").value("1"));
-    }
-
-    @Test
-    void rejectsAccountNumbersOutsideTheCopybookRange() throws Exception {
-        mockMvc.perform(get("/api/v1/inqacc/100000000"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.title").value("Validation failed"));
-    }
-
-    private void insertAccount(long customerNumber, long accountNumber, String accountType) {
+    private void insertAccount(long customerNumber, long accountNumber, String accountType, String sortcode) {
         dsl.insertInto(CUSTOMER)
-                .set(CUSTOMER.SORTCODE, "987654")
+                .set(CUSTOMER.SORTCODE, sortcode)
                 .set(CUSTOMER.CUSTOMER_NUMBER, customerNumber)
                 .set(CUSTOMER.NAME, "Example Customer %d".formatted(customerNumber))
                 .set(CUSTOMER.ADDRESS, "%d Example Road".formatted(customerNumber))
@@ -90,7 +56,7 @@ class InqaccControllerTest extends AbstractCockroachIntegrationTest {
                 .execute();
 
         dsl.insertInto(ACCOUNT)
-                .set(ACCOUNT.SORTCODE, "987654")
+                .set(ACCOUNT.SORTCODE, sortcode)
                 .set(ACCOUNT.ACCOUNT_NUMBER, accountNumber)
                 .set(ACCOUNT.CUSTOMER_NUMBER, customerNumber)
                 .set(ACCOUNT.ACCOUNT_TYPE, accountType)

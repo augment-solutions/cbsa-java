@@ -26,9 +26,8 @@ public record DbcrfunCommareaRequestDto(
         BigDecimal commAmt,
 
         @JsonProperty("mSortC")
-        @Min(0)
-        @Max(999_999)
-        Integer mSortC,
+        @Pattern(regexp = "\\d{6}")
+        String mSortC,
 
         @JsonProperty("CommAvBal")
         @Digits(integer = 10, fraction = 2)

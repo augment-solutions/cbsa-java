@@ -1,12 +1,12 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.InqaccRequest;
 import com.augment.cbsa.domain.InqaccResult;
 import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.repository.AccountRepository;
 import java.util.Objects;
 import org.jooq.exception.DataAccessException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,9 +21,9 @@ public class InqaccService {
     private final AccountRepository accountRepository;
     private final String sortcode;
 
-    public InqaccService(AccountRepository accountRepository, @Value("${cbsa.sortcode}") String sortcode) {
+    public InqaccService(AccountRepository accountRepository, CbsaProperties cbsaProperties) {
         this.accountRepository = accountRepository;
-        this.sortcode = sortcode;
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
     }
 
     public InqaccResult inquire(InqaccRequest request) {

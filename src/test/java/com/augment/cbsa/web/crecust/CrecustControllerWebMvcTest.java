@@ -53,7 +53,7 @@ class CrecustControllerWebMvcTest {
                         .content(requestJson("Dr Alice Example", "1 Main Street", 10_01_2000)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.CreCust.CommEyecatcher").value("CUST"))
-                .andExpect(jsonPath("$.CreCust.CommKey.CommSortcode").value(987654))
+                .andExpect(jsonPath("$.CreCust.CommKey.CommSortcode").value("987654"))
                 .andExpect(jsonPath("$.CreCust.CommKey.CommNumber").value(1))
                 .andExpect(jsonPath("$.CreCust.CommCreditScore").value(430));
     }
@@ -90,7 +90,7 @@ class CrecustControllerWebMvcTest {
         mockMvc.perform(post("/api/v1/crecust/insert")
                         .contentType(APPLICATION_JSON)
                         .content("""
-                                {"CreCust":{"CommKey":{"CommSortcode":1000000,"CommNumber":0},"CommName":"Dr Alice Example","CommAddress":"1 Main Street","CommDateOfBirth":10012000}}
+                                {"CreCust":{"CommKey":{"CommSortcode":"1000000","CommNumber":0},"CommName":"Dr Alice Example","CommAddress":"1 Main Street","CommDateOfBirth":10012000}}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"));
@@ -115,7 +115,7 @@ class CrecustControllerWebMvcTest {
                 {
                   "CreCust": {
                     "CommEyecatcher": "CUST",
-                    "CommKey": {"CommSortcode": 0, "CommNumber": 0},
+                    "CommKey": {"CommSortcode": "000000", "CommNumber": 0},
                     "CommName": "%s",
                     "CommAddress": "%s",
                     "CommDateOfBirth": %d,

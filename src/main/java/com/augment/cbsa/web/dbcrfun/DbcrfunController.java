@@ -86,7 +86,7 @@ public class DbcrfunController {
         return new DbcrfunResponseDto(new DbcrfunCommareaResponseDto(
                 commarea.commAccno(),
                 request.amount(),
-                Integer.parseInt(account.sortcode()),
+                account.sortcode(),
                 account.availableBalance(),
                 account.actualBalance(),
                 toDto(request.origin()),

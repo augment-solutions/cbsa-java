@@ -89,7 +89,7 @@ public class UpdcustController {
         CustomerDetails customer = Objects.requireNonNull(result.customer(), "Successful response requires a customer");
         return new UpdcustResponseDto(new UpdcustCommareaResponseDto(
                 EYE_CATCHER,
-                String.format(Locale.ROOT, "%06d", Integer.parseInt(customer.sortcode())),
+                customer.sortcode(),
                 String.format(Locale.ROOT, "%010d", customer.customerNumber()),
                 customer.name(),
                 customer.address(),

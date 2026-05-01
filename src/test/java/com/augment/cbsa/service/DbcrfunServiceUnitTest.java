@@ -47,7 +47,13 @@ class DbcrfunServiceUnitTest {
             TransactionCallback<DbcrfunResult> callback = invocation.getArgument(0, TransactionCallback.class);
             return callback.doInTransaction(mock(TransactionStatus.class));
         });
-        dbcrfunService = new DbcrfunService(dbcrfunRepository, dsl, transactionTemplate, "987654", FIXED_CLOCK);
+        dbcrfunService = new DbcrfunService(
+                dbcrfunRepository,
+                dsl,
+                transactionTemplate,
+                new com.augment.cbsa.config.CbsaProperties("987654"),
+                FIXED_CLOCK
+        );
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.augment.cbsa.service;
 
+import com.augment.cbsa.config.CbsaProperties;
 import com.augment.cbsa.domain.CreaccCommand;
 import com.augment.cbsa.domain.CreaccRequest;
 import com.augment.cbsa.domain.CreaccResult;
@@ -16,7 +17,6 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,13 +34,13 @@ public class CreaccService {
             CreaccRepository creaccRepository,
             InqcustService inqcustService,
             InqacccuService inqacccuService,
-            @Value("${cbsa.sortcode}") String sortcode,
+            CbsaProperties cbsaProperties,
             Clock clock
     ) {
         this.creaccRepository = Objects.requireNonNull(creaccRepository, "creaccRepository must not be null");
         this.inqcustService = Objects.requireNonNull(inqcustService, "inqcustService must not be null");
         this.inqacccuService = Objects.requireNonNull(inqacccuService, "inqacccuService must not be null");
-        this.sortcode = Objects.requireNonNull(sortcode, "sortcode must not be null");
+        this.sortcode = Objects.requireNonNull(cbsaProperties, "cbsaProperties must not be null").sortcode();
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 

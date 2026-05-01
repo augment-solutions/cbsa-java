@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 public record XfrfunCommareaRequestDto(
@@ -18,9 +19,8 @@ public record XfrfunCommareaRequestDto(
 
         @JsonProperty("CommFscode")
         @NotNull
-        @Min(0)
-        @Max(999_999)
-        Integer commFscode,
+        @Pattern(regexp = "\\d{6}")
+        String commFscode,
 
         @JsonProperty("CommTaccno")
         @NotNull
@@ -30,9 +30,8 @@ public record XfrfunCommareaRequestDto(
 
         @JsonProperty("CommTscode")
         @NotNull
-        @Min(0)
-        @Max(999_999)
-        Integer commTscode,
+        @Pattern(regexp = "\\d{6}")
+        String commTscode,
 
         @JsonProperty("CommAmt")
         @NotNull

@@ -147,7 +147,24 @@ Never persist both forms.
   failure path, and one invariant assertion (e.g. balance non-negative
   after operation).
 
-## 10. PR / commit conventions
+## 10. Configuration: typed properties + startup validation (sortcode and friends)
+
+- Every COBOL-shaped fixed-width identifier configured via Spring must be bound
+  through a dedicated `@ConfigurationProperties` record with
+  `jakarta.validation` annotations and `@Validated`, so malformed values fail
+  application startup instead of surfacing later as request-time 500s.
+- Keep zero-padded fixed-width identifiers as `String` end-to-end in domain,
+  services, controllers, DTOs, and tests. Convert to `int` only at the jOOQ
+  persistence boundary when a column truly requires it, and only after a regex
+  constraint has guaranteed the value is exactly six digits.
+- When reading a fixed-width numeric identifier back from a numeric persistence
+  column, always zero-pad it back to its COBOL width before returning it to the
+  domain or wire contract.
+- Issues #11 and #17 are the empirical source for this rule: parsing sortcodes
+  with `Integer.parseInt(...)` caused runtime 500s and could silently lose
+  leading zeros.
+
+## 11. PR / commit conventions
 
 - One COBOL program per branch and per PR. Branch name: `migrate/<PROGRAM>`.
 - Commit subject: `feat(<program>): translate <PROGRAM> to Java`.
@@ -156,7 +173,7 @@ Never persist both forms.
 - The Reviewer posts exactly `LGTM` to approve, or a comment starting with
   `BLOCK:` listing each blocking issue on its own line.
 
-## 11. Out of scope
+## 12. Out of scope
 
 `BNK1*`, `BNKMENU` (BMS terminal handlers), `BANKDATA` (seed loader; replaced
 by Flyway), and `ABNDPROC` (replaced by `@ControllerAdvice`) are dropped and
