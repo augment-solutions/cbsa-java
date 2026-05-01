@@ -21,7 +21,7 @@ public record XfrfunResult(
             Objects.requireNonNull(fromActualBalance, "Successful results must include the from actual balance");
             Objects.requireNonNull(toAvailableBalance, "Successful results must include the to available balance");
             Objects.requireNonNull(toActualBalance, "Successful results must include the to actual balance");
-            if (message != null && !message.isBlank()) {
+            if (message != null) {
                 throw new IllegalArgumentException("Successful results must not include a message");
             }
         } else {
