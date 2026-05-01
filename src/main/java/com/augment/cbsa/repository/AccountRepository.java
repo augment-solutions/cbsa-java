@@ -3,6 +3,7 @@ package com.augment.cbsa.repository;
 import com.augment.cbsa.domain.AccountDetails;
 import com.augment.cbsa.jooq.tables.records.AccountRecord;
 import java.util.Optional;
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +33,30 @@ public class AccountRepository {
                 .fetchOptional(this::toDomain);
     }
 
+    public CustomerAccountsCursor openCustomerAccountsCursor(String sortcode, long customerNumber) {
+        return new CustomerAccountsCursor(
+                dsl.selectFrom(ACCOUNT)
+                        .where(ACCOUNT.SORTCODE.eq(sortcode))
+                        .and(ACCOUNT.CUSTOMER_NUMBER.eq(customerNumber))
+                        .orderBy(ACCOUNT.ACCOUNT_NUMBER.asc())
+                        .limit(20)
+                        .fetchLazy()
+        );
+    }
+
+    public Optional<AccountDetails> fetchNext(CustomerAccountsCursor cursor) {
+        AccountRecord record = cursor.cursor().fetchNext();
+        if (record == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(toDomain(record));
+    }
+
+    public void close(CustomerAccountsCursor cursor) {
+        cursor.cursor().close();
+    }
+
     private AccountDetails toDomain(AccountRecord record) {
         return new AccountDetails(
                 record.getSortcode(),
@@ -46,5 +71,18 @@ public class AccountRepository {
                 record.getAvailableBalance(),
                 record.getActualBalance()
         );
+    }
+
+    public static class CustomerAccountsCursor {
+
+        private final Cursor<AccountRecord> cursor;
+
+        public CustomerAccountsCursor(Cursor<AccountRecord> cursor) {
+            this.cursor = java.util.Objects.requireNonNull(cursor, "cursor must not be null");
+        }
+
+        private Cursor<AccountRecord> cursor() {
+            return cursor;
+        }
     }
 }
