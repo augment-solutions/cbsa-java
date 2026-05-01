@@ -53,6 +53,9 @@ public class InqacccuService {
             return customerNotFound(customerNumber);
         }
 
+        // The customer was confirmed to exist via inqcustService above; cursor
+        // open/fetch/close failures are downstream of that confirmation, so the
+        // customerFound flag stays true on those failures.
         AccountRepository.CustomerAccountsCursor cursor;
         try {
             cursor = accountRepository.openCustomerAccountsCursor(sortcode, customerNumber);
@@ -60,7 +63,7 @@ public class InqacccuService {
             return InqacccuResult.failure(
                     OPEN_FAILURE_CODE,
                     customerNumber,
-                    false,
+                    true,
                     "INQACCCU failed to open the account cursor."
             );
         }
@@ -79,7 +82,7 @@ public class InqacccuService {
             pendingFailure = InqacccuResult.failure(
                     FETCH_FAILURE_CODE,
                     customerNumber,
-                    false,
+                    true,
                     "INQACCCU failed while fetching account data."
             );
         }
@@ -90,7 +93,7 @@ public class InqacccuService {
             return InqacccuResult.failure(
                     CLOSE_FAILURE_CODE,
                     customerNumber,
-                    false,
+                    true,
                     "INQACCCU failed to close the account cursor."
             );
         }
