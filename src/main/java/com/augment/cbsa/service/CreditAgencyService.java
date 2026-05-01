@@ -43,8 +43,8 @@ public class CreditAgencyService {
         }
 
         int score = scoreGenerator.nextCreditScore(agency, request);
-        if (score < 1 || score > 999) {
-            throw new IllegalArgumentException("credit agency score must be between 1 and 999");
+        if (score < 1 || score > 998) {
+            throw new IllegalArgumentException("credit agency score must be between 1 and 998");
         }
 
         return CompletableFuture.completedFuture(Optional.of(score));

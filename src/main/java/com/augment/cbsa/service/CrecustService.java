@@ -151,44 +151,48 @@ public class CrecustService {
             futures.add(creditAgencyService.requestCreditScore(request, agencyNumber));
         }
 
-        long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(CREDIT_AGENCY_REPLY_WINDOW_SECONDS);
+        // Single overall reply window across all agencies, mirroring the COBOL
+        // DELAY FOR SECONDS(3) + FETCH ANY NOSUSPEND flow. Wait for whichever
+        // agencies finish before the deadline and ignore the rest, so one slow
+        // agency cannot starve replies that already completed.
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                    .get(CREDIT_AGENCY_REPLY_WINDOW_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException ignored) {
+            // Some agencies did not reply within the overall window; fall through
+            // and harvest whichever did complete.
+        } catch (ExecutionException | CompletionException ignored) {
+            // Ignore individual credit-agency failures and average only successful replies.
+        } catch (InterruptedException exception) {
+            // Treat interruption as an immediate overall credit-check failure
+            // so we do not persist a customer based on partially collected
+            // scores while cancellation is being signaled.
+            Thread.currentThread().interrupt();
+            for (CompletableFuture<Optional<Integer>> future : futures) {
+                future.cancel(true);
+            }
+            return null;
+        }
+
         int totalScore = 0;
         int returnedScores = 0;
-        boolean interrupted = false;
         for (CompletableFuture<Optional<Integer>> future : futures) {
-            if (interrupted) {
+            if (!future.isDone() || future.isCompletedExceptionally() || future.isCancelled()) {
                 future.cancel(true);
                 continue;
             }
             try {
-                long remainingNanos = deadlineNanos - System.nanoTime();
-                if (remainingNanos <= 0) {
-                    future.cancel(true);
-                    continue;
-                }
-
-                Optional<Integer> maybeScore = future.get(remainingNanos, TimeUnit.NANOSECONDS);
+                Optional<Integer> maybeScore = future.getNow(Optional.empty());
                 if (maybeScore.isPresent()) {
                     totalScore += maybeScore.get();
                     returnedScores++;
                 }
-            } catch (TimeoutException exception) {
-                // Bound the wait per agency so a hung credit-agency call cannot
-                // block the request indefinitely; treat as fail code G fodder.
-                future.cancel(true);
-            } catch (ExecutionException | CompletionException exception) {
-                // Ignore individual credit-agency failures and average only successful replies.
-            } catch (InterruptedException exception) {
-                // Treat interruption as an immediate overall credit-check failure
-                // so we do not persist a customer based on partially collected
-                // scores while cancellation is being signaled.
-                Thread.currentThread().interrupt();
-                future.cancel(true);
-                interrupted = true;
+            } catch (CompletionException ignored) {
+                // Individual agency failure; average only successful replies.
             }
         }
 
-        if (interrupted || returnedScores == 0) {
+        if (returnedScores == 0) {
             return null;
         }
 

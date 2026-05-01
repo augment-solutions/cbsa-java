@@ -47,10 +47,10 @@ class CreditAgencyServiceUnitTest {
 
     @Test
     void rejectsScoresOutsideCobolRange() {
-        CreditAgencyService service = new CreditAgencyService(agency -> Duration.ZERO, duration -> { }, (agency, request) -> 1_000);
+        CreditAgencyService service = new CreditAgencyService(agency -> Duration.ZERO, duration -> { }, (agency, request) -> 999);
 
         assertThatThrownBy(() -> service.requestCreditScore(REQUEST, 1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("between 1 and 999");
+                .hasMessageContaining("between 1 and 998");
     }
 }
