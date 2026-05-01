@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "cbsa")
 public record CbsaProperties(
         @NotNull
-        @Pattern(regexp = "\\d{6}")
+        @Pattern(regexp = "[0-9]{6}")
         String sortcode
 ) {
 }

@@ -10,7 +10,7 @@ import java.util.Objects;
 public record CreaccKeyDto(
         @JsonProperty("CommSortcode")
         @NotNull
-        @Pattern(regexp = "\\d{6}")
+        @Pattern(regexp = "[0-9]{6}")
         String commSortcode,
 
         @JsonProperty("CommNumber")

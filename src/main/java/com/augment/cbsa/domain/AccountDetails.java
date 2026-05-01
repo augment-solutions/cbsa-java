@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public record AccountDetails(
         String sortcode,
@@ -19,6 +20,8 @@ public record AccountDetails(
         BigDecimal actualBalance
 ) {
 
+    private static final Pattern SORTCODE_PATTERN = Pattern.compile("[0-9]{6}");
+
     public AccountDetails {
         Objects.requireNonNull(sortcode, "sortcode must not be null");
         Objects.requireNonNull(accountType, "accountType must not be null");
@@ -28,8 +31,8 @@ public record AccountDetails(
         Objects.requireNonNull(availableBalance, "availableBalance must not be null");
         Objects.requireNonNull(actualBalance, "actualBalance must not be null");
 
-        if (sortcode.length() != 6) {
-            throw new IllegalArgumentException("sortcode must be exactly 6 characters");
+        if (!SORTCODE_PATTERN.matcher(sortcode).matches()) {
+            throw new IllegalArgumentException("sortcode must be exactly 6 ASCII digits");
         }
 
         if (accountType.length() > 8) {

@@ -19,7 +19,7 @@ public record XfrfunCommareaRequestDto(
 
         @JsonProperty("CommFscode")
         @NotNull
-        @Pattern(regexp = "\\d{6}")
+        @Pattern(regexp = "[0-9]{6}")
         String commFscode,
 
         @JsonProperty("CommTaccno")
@@ -30,7 +30,7 @@ public record XfrfunCommareaRequestDto(
 
         @JsonProperty("CommTscode")
         @NotNull
-        @Pattern(regexp = "\\d{6}")
+        @Pattern(regexp = "[0-9]{6}")
         String commTscode,
 
         @JsonProperty("CommAmt")
