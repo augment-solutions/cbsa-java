@@ -1,0 +1,25 @@
+package com.augment.cbsa;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+/**
+ * Self-contained smoke test for the bootstrap context wiring.
+ * Per translation-rules.md §9, real persistence tests use a Testcontainers
+ * CockroachDB and are added per-program. This test deliberately excludes the
+ * DataSource/Flyway/jOOQ autoconfigurations so it can run without a database.
+ */
+@SpringBootTest(properties = {
+        "spring.autoconfigure.exclude=" +
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration"
+})
+@ActiveProfiles("test")
+class CbsaApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+}

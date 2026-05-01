@@ -22,3 +22,21 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Build output
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+HELP.md
+
+# CockroachDB runtime artifacts when started from this directory
+cockroach-data/
+heap_profiler/
+goroutine_dump/
+pprof_dump/
+logs/
