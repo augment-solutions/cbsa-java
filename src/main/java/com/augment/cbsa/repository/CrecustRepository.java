@@ -3,7 +3,9 @@ package com.augment.cbsa.repository;
 import com.augment.cbsa.domain.CrecustCommand;
 import com.augment.cbsa.domain.CrecustResult;
 import com.augment.cbsa.domain.CustomerDetails;
+import com.augment.cbsa.error.CbsaAbendException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import org.jooq.DSLContext;
@@ -22,6 +24,9 @@ public class CrecustRepository {
     private static final String GLOBAL_CONTROL_ID = "GLOBAL";
     private static final DateTimeFormatter PROCTRAN_DOB_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final long MAX_CUSTOMER_NUMBER = 9_999_999_999L;
+    // Standard abend code for failures to write the PROCTRAN audit trail.
+    // See Section 12 of docs/translation-rules.md.
+    private static final String PROCTRAN_ABEND_CODE = "HWPT";
 
     private final DSLContext dsl;
 
@@ -37,8 +42,8 @@ public class CrecustRepository {
         } catch (RollbackFailureException exception) {
             return exception.result();
         } catch (DataAccessException exception) {
-            throw new com.augment.cbsa.error.CbsaAbendException(
-                    "HWPT",
+            throw new CbsaAbendException(
+                    PROCTRAN_ABEND_CODE,
                     "CRECUST failed to persist the customer data.",
                     exception
             );
@@ -130,8 +135,14 @@ public class CrecustRepository {
                     .set(PROCTRAN.AMOUNT, new BigDecimal("0.00"))
                     .execute();
         } catch (DataAccessException exception) {
-            throw new com.augment.cbsa.error.CbsaAbendException(
-                    "HWPT",
+            // Re-throw serialization failures so CrdbRetry can retry the
+            // transaction; only non-retryable PROCTRAN write failures should
+            // surface as a system abend.
+            if (isSerializationFailure(exception)) {
+                throw exception;
+            }
+            throw new CbsaAbendException(
+                    PROCTRAN_ABEND_CODE,
                     "CRECUST failed to write the audit trail.",
                     exception
             );
@@ -149,6 +160,17 @@ public class CrecustRepository {
                 + String.format("%010d", customer.customerNumber())
                 + String.format("%-14.14s", customer.name())
                 + customer.dateOfBirth().format(PROCTRAN_DOB_FORMATTER);
+    }
+
+    private static boolean isSerializationFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SQLException sqlException && "40001".equals(sqlException.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private static final class RollbackFailureException extends RuntimeException {

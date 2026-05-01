@@ -188,7 +188,51 @@ Never persist both forms.
 - The Reviewer posts exactly `LGTM` to approve, or a comment starting with
   `BLOCK:` listing each blocking issue on its own line.
 
-## 12. Out of scope
+## 12. PROCTRAN audit-trail write failures
+
+Every program in this codebase writes a `PROCTRAN` row as part of the
+mutating transaction it performs (account/customer create, update, delete,
+debit/credit, transfer). A failure to write `PROCTRAN` is **not** a
+domain-level failure of the operation; it is a system abend that must be
+escalated to operations.
+
+- A non-retryable `DataAccessException` thrown by a `PROCTRAN` insert MUST
+  be wrapped in `CbsaAbendException(PROCTRAN_ABEND_CODE, ...)` where
+  `PROCTRAN_ABEND_CODE = "HWPT"`. The `@ControllerAdvice` then surfaces
+  this as a 500 abend, which is the right classification for an
+  audit-trail outage.
+- Do not map `PROCTRAN` insert failures to a domain "fail code" (e.g.
+  CRECUST `"1"`, UPDCUST `"3"`). Doing so makes an audit-write outage
+  indistinguishable from a real data-mutation failure and silently
+  downgrades a 500 to a 200-with-fail-code.
+- Always re-throw `SQLSTATE 40001` (serialization failures) so the
+  surrounding `CrdbRetry` wrapper can retry the whole transaction.
+  Wrap *only* the non-retryable branch:
+  ```java
+  } catch (DataAccessException exception) {
+      if (isSerializationFailure(exception)) {
+          throw exception;
+      }
+      throw new CbsaAbendException(PROCTRAN_ABEND_CODE,
+              "<PROGRAM> failed to write the audit trail.", exception);
+  }
+  ```
+- Use the constant name `PROCTRAN_ABEND_CODE` (not `ABEND_CODE`,
+  `WPCD`, or any program-specific spelling) so the intent of the catch
+  block is obvious in code review.
+- The wrap may live in either the repository or the service layer,
+  whichever owns the `PROCTRAN` insert call site:
+  - Repositories that own their own transaction (e.g. `CreaccRepository`,
+    `CrecustRepository`, `UpdcustRepository`, `DbcrfunRepository`) wrap
+    the `PROCTRAN` `try/catch` directly inside the transactional method.
+  - Services that drive a `TransactionTemplate` themselves (e.g.
+    `DelaccService`, `DelcusService`, `XfrfunService`) wrap the call from
+    the service. The repository method itself stays a plain insert.
+- Issues #12 and #19 are the empirical source for this rule: PROCTRAN
+  failures in CRECUST / UPDCUST were originally returning fail codes
+  `"1"` / `"3"`, hiding audit-trail outages behind a 200 OK response.
+
+## 13. Out of scope
 
 `BNK1*`, `BNKMENU` (BMS terminal handlers), `BANKDATA` (seed loader; replaced
 by Flyway), and `ABNDPROC` (replaced by `@ControllerAdvice`) are dropped and

@@ -139,7 +139,7 @@ class XfrfunServiceUnitTest {
     }
 
     @Test
-    void wrapsAuditFailuresInWpcdAbend() {
+    void wrapsAuditFailuresInHwptAbend() {
         when(xfrfunRepository.findBySortcodeAndAccountNumberForUpdate("987654", 12345678L)).thenReturn(Optional.of(account(12345678L, "100.00")));
         when(xfrfunRepository.findBySortcodeAndAccountNumberForUpdate("987654", 87654321L)).thenReturn(Optional.of(account(87654321L, "10.00")));
         when(xfrfunRepository.updateBalances("987654", 12345678L, new BigDecimal("75.00"), new BigDecimal("75.00"))).thenReturn(1);
@@ -150,7 +150,7 @@ class XfrfunServiceUnitTest {
         assertThatThrownBy(() -> xfrfunService.transfer(new XfrfunRequest(12345678L, 87654321L, new BigDecimal("25.00"))))
                 .isInstanceOf(CbsaAbendException.class)
                 .extracting(exception -> ((CbsaAbendException) exception).getAbendCode())
-                .isEqualTo("WPCD");
+                .isEqualTo("HWPT");
     }
 
     private AccountDetails account(long accountNumber, String balance) {

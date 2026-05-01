@@ -29,7 +29,11 @@ public class UpdcustRepository {
     // requires an audit row. Use OUC (branch update customer) and reuse the
     // existing 40-char customer description layout from OCC/ODC.
     private static final String PROCTRAN_UPDATE_CUSTOMER_TYPE = "OUC";
-    private static final String ABEND_CODE = "HWPT";
+    // Standard abend code for failures to write the PROCTRAN audit trail.
+    // Section 12 of docs/translation-rules.md requires every PROCTRAN insert
+    // failure to surface as CbsaAbendException("HWPT") rather than a domain
+    // fail code so the global handler classifies it as a 500 abend.
+    private static final String PROCTRAN_ABEND_CODE = "HWPT";
 
     private final DSLContext dsl;
 
@@ -61,7 +65,7 @@ public class UpdcustRepository {
         } catch (RollbackFailureException exception) {
             return exception.result();
         } catch (DataAccessException exception) {
-            throw new CbsaAbendException(ABEND_CODE, "UPDCUST failed to persist the customer data.", exception);
+            throw new CbsaAbendException(PROCTRAN_ABEND_CODE, "UPDCUST failed to persist the customer data.", exception);
         }
     }
 
@@ -145,7 +149,14 @@ public class UpdcustRepository {
             if (isSerializationFailure(exception)) {
                 throw exception;
             }
-            throw rollbackFailure("3", "Unable to update the customer record.");
+            // PROCTRAN audit-trail failures must surface as a system abend
+            // rather than a domain "update failed" fail code so an audit-write
+            // outage is not indistinguishable from a CUSTOMER rewrite failure.
+            throw new CbsaAbendException(
+                    PROCTRAN_ABEND_CODE,
+                    "UPDCUST failed to write the audit trail.",
+                    exception
+            );
         }
 
         return UpdcustResult.success(updatedCustomer);
