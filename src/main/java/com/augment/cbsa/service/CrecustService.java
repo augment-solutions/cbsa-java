@@ -20,6 +20,9 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class CrecustService {
             DateTimeFormatter.ofPattern("ddMMuuuu").withResolverStyle(ResolverStyle.STRICT);
     private static final int CREDIT_AGENCY_COUNT = 5;
     private static final int REVIEW_DATE_BOUND = 20;
+    private static final long CREDIT_AGENCY_TIMEOUT_SECONDS = 6;
     private static final List<String> VALID_TITLES = List.of(
             "Professor", "Mr", "Mrs", "Miss", "Ms", "Dr", "Drs", "Lord", "Sir", "Lady", ""
     );
@@ -112,7 +116,10 @@ public class CrecustService {
     }
 
     private CrecustResult invalidDateFailure(int cobolDate) {
-        int year = Integer.parseInt(String.format("%08d", cobolDate).substring(4));
+        // ddMMyyyy: year is the trailing 4 digits. Use modulo on the absolute
+        // value so negative or out-of-range inputs cannot throw here and turn a
+        // validation issue into a 500.
+        int year = Math.abs(cobolDate) % 10000;
         if (year < 1601) {
             return CrecustResult.failure("O", "Date of birth must not be earlier than 1601.");
         }
@@ -143,13 +150,20 @@ public class CrecustService {
         int returnedScores = 0;
         for (CompletableFuture<Optional<Integer>> future : futures) {
             try {
-                Optional<Integer> maybeScore = future.join();
+                Optional<Integer> maybeScore = future.get(CREDIT_AGENCY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                 if (maybeScore.isPresent()) {
                     totalScore += maybeScore.get();
                     returnedScores++;
                 }
-            } catch (CompletionException exception) {
+            } catch (TimeoutException exception) {
+                // Bound the wait per agency so a hung credit-agency call cannot
+                // block the request indefinitely; treat as fail code G fodder.
+                future.cancel(true);
+            } catch (ExecutionException | CompletionException exception) {
                 // Ignore individual credit-agency failures and average only successful replies.
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                future.cancel(true);
             }
         }
 
@@ -162,11 +176,15 @@ public class CrecustService {
     }
 
     private String firstToken(String name) {
-        if (name.isEmpty() || Character.isWhitespace(name.charAt(0))) {
+        // Strip leading whitespace before extracting the title token so that a
+        // leading-whitespace name does not silently bypass title validation by
+        // appearing to have an empty (i.e., "no title") prefix.
+        String trimmed = name.stripLeading();
+        if (trimmed.isEmpty()) {
             return "";
         }
-        int delimiterIndex = name.indexOf(' ');
-        return delimiterIndex < 0 ? name : name.substring(0, delimiterIndex);
+        int delimiterIndex = trimmed.indexOf(' ');
+        return delimiterIndex < 0 ? trimmed : trimmed.substring(0, delimiterIndex);
     }
 
     private record CreditDecision(int creditScore, LocalDate reviewDate) {

@@ -11,7 +11,11 @@ public record CrecustResult(
 ) {
 
     private static final Set<String> VALIDATION_FAIL_CODES = Set.of("T", "O", "Y", "Z");
-    private static final Set<String> CREDIT_FAIL_CODES = Set.of("A", "B", "C", "D", "E", "F", "G", "H");
+    // Credit-agency related fail codes only. A-D are async credit-agency child
+    // failures; G is the all-agencies-failed/timed-out aggregate. E (customer
+    // READ), F (customer REWRITE) and H (proctran write) are persistence
+    // failures and must not be treated as credit failures (they map to 5xx).
+    private static final Set<String> CREDIT_FAIL_CODES = Set.of("A", "B", "C", "D", "G");
 
     public CrecustResult {
         Objects.requireNonNull(failCode, "failCode must not be null");

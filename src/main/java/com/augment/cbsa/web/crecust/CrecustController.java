@@ -74,7 +74,7 @@ public class CrecustController {
         return switch (result.failCode()) {
             case "T" -> "Invalid customer title";
             case "O", "Y", "Z" -> "Invalid date of birth";
-            case "A", "B", "C", "D", "E", "F", "G", "H" -> "Credit check unavailable";
+            case "A", "B", "C", "D", "G" -> "Credit check unavailable";
             default -> "Customer creation failed";
         };
     }
