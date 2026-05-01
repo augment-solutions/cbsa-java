@@ -10,9 +10,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
@@ -26,6 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(DelaccController.class)
 @Import(CbsaExceptionHandler.class)
+@EnableConfigurationProperties(com.augment.cbsa.config.CbsaProperties.class)
+@TestPropertySource(properties = "cbsa.sortcode=987654")
 class DelaccControllerWebMvcTest {
 
     @Autowired
@@ -86,6 +90,47 @@ class DelaccControllerWebMvcTest {
         mockMvc.perform(delete("/api/v1/delacc/remove/100000000").contentType(APPLICATION_JSON).content(requestJson()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"));
+    }
+
+    @Test
+    void rejectsBodyAccnoThatMismatchesPath() throws Exception {
+        String body = requestJson().replace("\"DelAccAccno\": 12345678", "\"DelAccAccno\": 99999999");
+        mockMvc.perform(delete("/api/v1/delacc/remove/12345678").contentType(APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.detail").value("Body DelAccAccno does not match path accno."));
+    }
+
+    @Test
+    void rejectsBodyScodeThatMismatchesConfiguredSortcode() throws Exception {
+        String body = requestJson().replace("\"DelAccScode\": \"987654\"", "\"DelAccScode\": \"123456\"");
+        mockMvc.perform(delete("/api/v1/delacc/remove/12345678").contentType(APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.detail").value("Body DelAccScode does not match the configured branch sortcode."));
+    }
+
+    @Test
+    void allowsEmptyOrNullBodyKeyFields() throws Exception {
+        when(delaccService.delete(new DelaccRequest(12345678L))).thenReturn(DelaccResult.success(new AccountDetails(
+                "987654",
+                10L,
+                12345678L,
+                "ISA",
+                new BigDecimal("1.50"),
+                LocalDate.of(2024, 1, 2),
+                new BigDecimal("250.00"),
+                LocalDate.of(2024, 2, 3),
+                LocalDate.of(2024, 3, 4),
+                new BigDecimal("1500.25"),
+                new BigDecimal("1499.75")
+        )));
+
+        String body = requestJson()
+                .replace("\"DelAccAccno\": 12345678,", "")
+                .replace("\"DelAccScode\": \"987654\"", "\"DelAccScode\": \"\"");
+        mockMvc.perform(delete("/api/v1/delacc/remove/12345678").contentType(APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
     }
 
     @Test
