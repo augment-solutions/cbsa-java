@@ -13,8 +13,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Repository;
 
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;

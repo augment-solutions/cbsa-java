@@ -217,6 +217,14 @@ escalated to operations.
               "<PROGRAM> failed to write the audit trail.", exception);
   }
   ```
+- The `DataAccessException` here is **`org.springframework.dao.DataAccessException`**,
+  not `org.jooq.exception.DataAccessException`. Spring Boot 3's
+  `JooqAutoConfiguration` registers `DefaultExceptionTranslatorExecuteListener`,
+  which intercepts every `SQLException` raised by jOOQ and substitutes the
+  Spring DAE before it leaves jOOQ. Spring's DAE is **not** a subtype of
+  jOOQ's, so a `catch (org.jooq.exception.DataAccessException)` block never
+  matches at runtime. `CrdbRetry.run(...)`, every PROCTRAN inner catch, and
+  the outer `XRTY` catch must all import `org.springframework.dao.DataAccessException`.
 - Use the constant name `PROCTRAN_ABEND_CODE` (not `ABEND_CODE`,
   `WPCD`, or any program-specific spelling) so the intent of the catch
   block is obvious in code review.

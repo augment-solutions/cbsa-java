@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
+import org.springframework.dao.DataAccessException;
 
 public final class CrdbRetry {
 

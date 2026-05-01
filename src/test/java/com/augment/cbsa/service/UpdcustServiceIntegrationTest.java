@@ -2,6 +2,7 @@ package com.augment.cbsa.service;
 
 import com.augment.cbsa.domain.UpdcustRequest;
 import com.augment.cbsa.domain.UpdcustResult;
+import com.augment.cbsa.error.CbsaAbendException;
 import com.augment.cbsa.support.AbstractCockroachIntegrationTest;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -17,6 +18,7 @@ import static com.augment.cbsa.jooq.Tables.CONTROL;
 import static com.augment.cbsa.jooq.Tables.CUSTOMER;
 import static com.augment.cbsa.jooq.Tables.PROCTRAN;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class UpdcustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
@@ -97,6 +99,42 @@ class UpdcustServiceIntegrationTest extends AbstractCockroachIntegrationTest {
         assertThat(result.failCode()).isEqualTo("4");
         assertThat(dsl.fetchCount(PROCTRAN)).isZero();
         assertThat(dsl.select(CUSTOMER.NAME).from(CUSTOMER).fetchSingle(CUSTOMER.NAME)).isEqualTo("Mr Old Name");
+    }
+
+    @Test
+    void proctranInsertFailureSurfacesHwptAbend() {
+        // Force every PROCTRAN insert to fail at the database layer so the
+        // inner catch in UpdcustRepository.updateCustomer translates the
+        // failure into the HWPT system abend. Without #36's fix the catch
+        // never matches and the test sees a Spring DataIntegrityViolation
+        // bubble out instead, classified as UNEX.
+        insertCustomer(1L, "Mr Old Name", "9 Old Street", LocalDate.of(2000, 1, 10), (short) 430, LocalDate.of(2026, 5, 8));
+        // The Cockroach container is a singleton shared across every
+        // integration test class, so leaking 'proctran_block_inserts' would
+        // poison every later PROCTRAN write. Drop any leftover constraint
+        // from a previously-killed JVM before we add ours, run the ADD
+        // inside the try so cleanup still fires if the assertion or service
+        // call throws, and use DROP ... IF EXISTS in the finally for the
+        // same reason.
+        dsl.execute("ALTER TABLE proctran DROP CONSTRAINT IF EXISTS proctran_block_inserts");
+        try {
+            dsl.execute("ALTER TABLE proctran ADD CONSTRAINT proctran_block_inserts CHECK (false) NOT VALID");
+            assertThatThrownBy(() -> updcustService.update(new UpdcustRequest(
+                    1L,
+                    "Mrs Alice Example",
+                    "1 Main Street",
+                    10_01_2000,
+                    999,
+                    99_99_9999
+            )))
+                    .isInstanceOf(CbsaAbendException.class)
+                    .satisfies(thrown -> {
+                        CbsaAbendException abend = (CbsaAbendException) thrown;
+                        assertThat(abend.getAbendCode()).isEqualTo("HWPT");
+                    });
+        } finally {
+            dsl.execute("ALTER TABLE proctran DROP CONSTRAINT IF EXISTS proctran_block_inserts");
+        }
     }
 
     private void insertCustomer(long customerNumber, String name, String address, LocalDate dateOfBirth, short creditScore, LocalDate csReviewDate) {

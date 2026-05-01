@@ -10,7 +10,7 @@ import com.augment.cbsa.repository.AccountRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.jooq.exception.DataAccessException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
