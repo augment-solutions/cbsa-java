@@ -81,8 +81,14 @@ public class DelaccService {
 
         try {
             int deletedRows = delaccRepository.deleteAccount(sortcode, request.accountNumber());
-            if (deletedRows != 1) {
+            if (deletedRows == 0) {
                 return deleteFailure(request.accountNumber());
+            }
+            if (deletedRows > 1) {
+                // Unique (sortcode, account_number) makes >1 impossible; throw to roll back
+                // any unexpected over-delete and fail loudly instead of committing silently.
+                throw new CbsaAbendException(PROCTRAN_ABEND_CODE,
+                        "DELACC unexpectedly deleted %d rows for account %d.".formatted(deletedRows, request.accountNumber()));
             }
         } catch (DataAccessException exception) {
             if (isSerializationFailure(exception)) {
