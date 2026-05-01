@@ -1,8 +1,10 @@
 package com.augment.cbsa;
 
+import com.augment.cbsa.repository.CustomerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * Self-contained smoke test for the bootstrap context wiring.
@@ -18,6 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 })
 @ActiveProfiles("test")
 class CbsaApplicationTests {
+
+    @MockitoBean
+    private CustomerRepository customerRepository;
 
     @Test
     void contextLoads() {
